@@ -20,7 +20,7 @@ export default async function UsersPage() {
           <p className="mt-4 text-gray-600">
             You do not have permission to manage users.
           </p>
-        </div>
+        </div> 
       </main>
     );
   }

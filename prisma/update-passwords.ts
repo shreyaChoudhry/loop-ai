@@ -32,7 +32,7 @@ async function main() {
 
   console.log("✅ Password updated for all 3 users");
 }
-
+ 
 main()
   .catch(console.error)
   .finally(() => prisma.$disconnect());
