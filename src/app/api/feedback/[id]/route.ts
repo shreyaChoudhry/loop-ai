@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/auth";
 import prisma from "@/lib/prisma";
+import { authOptions } from "@/auth";
 
 type RouteContext = {
   params: {
@@ -10,21 +10,19 @@ type RouteContext = {
   };
 };
 
-export async function DELETE(
+export async function PATCH(
   request: Request,
   { params }: RouteContext
 ) {
   try {
-    // --------------------------------
-    // Authentication
-    // --------------------------------
+    const session = await getServerSession(
+      authOptions
+    );
 
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
+    if (!session?.user) {
       return NextResponse.json(
         {
-          message: "Unauthorized.",
+          error: "Unauthorized",
         },
         {
           status: 401,
@@ -32,15 +30,16 @@ export async function DELETE(
       );
     }
 
-    // --------------------------------
-    // Authorization
-    // --------------------------------
+    const role = session.user.role;
 
-    if (session.user.role !== "ADMIN") {
+    if (
+      role !== "ADMIN" &&
+      role !== "ANALYST"
+    ) {
       return NextResponse.json(
         {
-          message:
-            "Only administrators can delete feedback.",
+          error:
+            "You do not have permission to update feedback status.",
         },
         {
           status: 403,
@@ -48,20 +47,41 @@ export async function DELETE(
       );
     }
 
-    // --------------------------------
-    // Check feedback exists
-    // --------------------------------
+    const body = await request.json();
 
-    const feedback = await prisma.feedback.findUnique({
-      where: {
-        id: params.id,
-      },
-    });
+    const status = body.status;
+
+    const allowedStatuses = [
+      "NEW",
+      "REVIEWED",
+      "ACTIONED",
+    ];
+
+    if (
+      typeof status !== "string" ||
+      !allowedStatuses.includes(status)
+    ) {
+      return NextResponse.json(
+        {
+          error: "Invalid status.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const feedback =
+      await prisma.feedback.findUnique({
+        where: {
+          id: params.id,
+        },
+      });
 
     if (!feedback) {
       return NextResponse.json(
         {
-          message: "Feedback not found.",
+          error: "Feedback not found.",
         },
         {
           status: 404,
@@ -69,32 +89,37 @@ export async function DELETE(
       );
     }
 
-    // --------------------------------
-    // Delete feedback
-    // --------------------------------
-
-    await prisma.feedback.delete({
-      where: {
-        id: params.id,
-      },
-    });
-
-    // --------------------------------
-    // Success
-    // --------------------------------
+    const updatedFeedback =
+      await prisma.feedback.update({
+        where: {
+          id: params.id,
+        },
+        data: {
+          status: status as
+            | "NEW"
+            | "REVIEWED"
+            | "ACTIONED",
+        },
+        select: {
+          id: true,
+          status: true,
+        },
+      });
 
     return NextResponse.json({
-      message: "Feedback deleted successfully.",
+      success: true,
+      feedback: updatedFeedback,
     });
   } catch (error) {
     console.error(
-      "Failed to delete feedback:",
+      "Status update error:",
       error
     );
 
     return NextResponse.json(
       {
-        message: "Something went wrong.",
+        error:
+          "Failed to update feedback status.",
       },
       {
         status: 500,

@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type StatusUpdaterProps = {
   feedbackId: string;
   currentStatus: string;
   canUpdate: boolean;
 };
-
 
 export default function StatusUpdater({
   feedbackId,
@@ -17,21 +16,29 @@ export default function StatusUpdater({
 }: StatusUpdaterProps) {
   const router = useRouter();
 
-  const [status, setStatus] = useState(currentStatus);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [status, setStatus] =
+    useState(currentStatus);
 
-  const updateStatus = async (newStatus: string) => {
-    setLoading(true);
-    setMessage("");
+  const [loading, setLoading] =
+    useState(false);
 
+  const [error, setError] =
+    useState("");
+
+  const updateStatus = async (
+    newStatus: string
+  ) => {
     try {
+      setLoading(true);
+      setError("");
+
       const response = await fetch(
         `/api/feedback/${feedbackId}/status`,
         {
           method: "PATCH",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             status: newStatus,
@@ -39,93 +46,93 @@ export default function StatusUpdater({
         }
       );
 
+      const data =
+        await response.json();
+
       if (!response.ok) {
-        let errorMessage = "Failed to update status.";
-
-        try {
-          const data = await response.json();
-
-          if (data?.message) {
-            errorMessage = data.message;
-          }
-        } catch {
-          // Ignore JSON parsing error
-        }
-
-        setMessage(errorMessage);
-        return;
+        throw new Error(
+          data.error ||
+            "Failed to update status."
+        );
       }
 
-      // Update the UI immediately
       setStatus(newStatus);
-      setMessage("Status updated successfully.");
 
-      // Refresh server-side data
       router.refresh();
     } catch (error) {
-      console.error("Status update error:", error);
+      console.error(error);
 
-      setMessage(
-        "Something went wrong while updating status."
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update status."
       );
     } finally {
       setLoading(false);
     }
   };
 
+  const formatStatus = (
+    value: string
+  ) => {
+    return (
+      value.charAt(0) +
+      value.slice(1).toLowerCase()
+    );
+  };
+
   if (!canUpdate) {
     return (
-      <div className="mt-3">
-        <span
-          className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-            status === "NEW"
-              ? "bg-blue-100 text-blue-700"
-              : status === "REVIEWED"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-green-100 text-green-700"
-          }`}
-        >
-          {status.charAt(0) +
-            status.slice(1).toLowerCase()}
-        </span>
+      <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+        <p className="text-sm text-gray-500">
+          Status
+        </p>
 
-        <p className="mt-2 text-xs text-gray-500">
-          You have read-only access.
+        <p className="mt-1 text-sm font-medium text-gray-900">
+          {formatStatus(status)}
         </p>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 space-y-3">
+    <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <label className="block text-sm font-medium text-gray-700">
+        Status
+      </label>
+
       <select
         value={status}
         disabled={loading}
         onChange={(event) =>
-          updateStatus(event.target.value)
+          updateStatus(
+            event.target.value
+          )
         }
-        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+        className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-gray-100"
       >
-        <option value="NEW">New</option>
-        <option value="REVIEWED">Reviewed</option>
-        <option value="RESOLVED">Resolved</option>
+        <option value="NEW">
+          New
+        </option>
+
+        <option value="REVIEWED">
+          Reviewed
+        </option>
+
+        <option value="ACTIONED">
+          Actioned
+        </option>
       </select>
 
       {loading && (
-        <p className="text-xs text-gray-500">
+        <p className="mt-2 text-xs text-gray-500">
           Updating status...
         </p>
       )}
 
-      {message && (
-        <p
-          className={`text-xs ${
-            message === "Status updated successfully."
-              ? "text-green-600"
-              : "text-red-600"
-          }`}
-        >
-          {message}
+      {error && (
+        <p className="mt-2 text-xs text-red-600">
+          {error}
         </p>
       )}
     </div>

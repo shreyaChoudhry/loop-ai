@@ -16,7 +16,7 @@ enum UserRole {
 enum FeedbackStatus {
   NEW
   REVIEWED
-  RESOLVED
+  ACTIONED
 }
 
 enum FeedbackSource {
@@ -67,9 +67,10 @@ model Feedback {
   sentiment      Sentiment?
   sentimentScore Float?
   category       String?
+  rating Int?
   createdAt      DateTime        @default(now())
   workspaceId    String
-
+  
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   themes         FeedbackTheme[]
   embeddings     Embedding[]
