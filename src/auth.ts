@@ -1,6 +1,11 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth, {
+  NextAuthOptions,
+} from "next-auth";
+
 import CredentialsProvider from "next-auth/providers/credentials";
+
 import bcrypt from "bcrypt";
+
 import prisma from "./lib/prisma";
 
 export const authOptions: NextAuthOptions = {
@@ -13,6 +18,7 @@ export const authOptions: NextAuthOptions = {
           label: "Email",
           type: "email",
         },
+
         password: {
           label: "Password",
           type: "password",
@@ -20,24 +26,29 @@ export const authOptions: NextAuthOptions = {
       },
 
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (
+          !credentials?.email ||
+          !credentials?.password
+        ) {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        });
+        const user =
+          await prisma.user.findUnique({
+            where: {
+              email: credentials.email,
+            },
+          });
 
         if (!user) {
           return null;
         }
 
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const passwordMatch =
+          await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
 
         if (!passwordMatch) {
           return null;
@@ -48,6 +59,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role,
+          workspaceId: user.workspaceId,
         };
       },
     }),
@@ -62,15 +74,26 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.workspaceId =
+          user.workspaceId;
       }
 
       return token;
     },
 
-    async session({ session, token }) {
+    async session({
+      session,
+      token,
+    }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        session.user.id =
+          token.id as string;
+
+        session.user.role =
+          token.role as string;
+
+        session.user.workspaceId =
+          token.workspaceId as string;
       }
 
       return session;
@@ -81,9 +104,14 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
 
-  secret: process.env.NEXTAUTH_SECRET,
+  secret:
+    process.env.NEXTAUTH_SECRET,
 };
 
-const handler = NextAuth(authOptions);
+const handler =
+  NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
+export {
+  handler as GET,
+  handler as POST,
+};

@@ -1,7 +1,9 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 
+import CSVUpload from "./CSVUpload";
 import InboxTable from "./InboxTable";
+import SimulatedChannels from "./SimulatedChannels";
 
 const PAGE_SIZE = 10;
 
@@ -50,7 +52,13 @@ export default async function InboxPage({
 
   const rating =
     searchParams.rating || "";
+  const parsedRating = Number(rating);
 
+const validRating =
+  rating !== "" &&
+  Number.isInteger(parsedRating) &&
+  parsedRating >= 1 &&
+  parsedRating <= 5;
   // --------------------------------
   // Date filter
   // --------------------------------
@@ -167,15 +175,15 @@ export default async function InboxPage({
         }
       : {}),
 
-    ...(rating
+    ...(validRating
       ? {
-          rating: Number(rating),
+          rating:  parsedRating,
         }
       : {}),
   };
 
   // --------------------------------
-  // Count ALL matching records
+  // Count matching feedback
   // --------------------------------
 
   const totalFeedback =
@@ -184,7 +192,7 @@ export default async function InboxPage({
     });
 
   // --------------------------------
-  // Pagination calculation
+  // Pagination
   // --------------------------------
 
   const totalPages = Math.max(
@@ -203,7 +211,7 @@ export default async function InboxPage({
     (currentPage - 1) * PAGE_SIZE;
 
   // --------------------------------
-  // Fetch only current page
+  // Fetch current page only
   // --------------------------------
 
   const feedback =
@@ -230,7 +238,7 @@ export default async function InboxPage({
     });
 
   // --------------------------------
-  // Get IDs for current page
+  // Feedback IDs
   // --------------------------------
 
   const feedbackIds = feedback.map(
@@ -238,7 +246,7 @@ export default async function InboxPage({
   );
 
   // --------------------------------
-  // Get themes for current page
+  // Theme relationships
   // --------------------------------
 
   const feedbackThemeRelations =
@@ -258,7 +266,7 @@ export default async function InboxPage({
       : [];
 
   // --------------------------------
-  // Get all themes for filter
+  // All themes
   // --------------------------------
 
   const themes =
@@ -274,7 +282,7 @@ export default async function InboxPage({
     });
 
   // --------------------------------
-  // Attach themes to feedback
+  // Attach themes
   // --------------------------------
 
   const formattedFeedback =
@@ -317,8 +325,8 @@ export default async function InboxPage({
     });
 
   // --------------------------------
-  // Build pagination URL
-  // Keeps every active filter
+  // Pagination URL
+  // Preserve filters
   // --------------------------------
 
   const buildPageUrl = (
@@ -384,6 +392,10 @@ export default async function InboxPage({
     return `/dashboard/inbox?${params.toString()}`;
   };
 
+  // --------------------------------
+  // Display count
+  // --------------------------------
+
   const showingFrom =
     totalFeedback === 0
       ? 0
@@ -401,40 +413,42 @@ export default async function InboxPage({
 
   return (
     <main className="space-y-6">
-      {/* Header */}
+      {/* --------------------------------
+          Page Header
+      -------------------------------- */}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-            Feedback Inbox
-          </h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          Feedback Inbox
+        </h1>
 
-          <p className="mt-1 text-sm text-zinc-500">
-            Review, filter and manage
-            customer feedback.
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            type="button"
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-          >
-            Upload CSV
-          </button>
-
-          <button
-            type="button"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
-          >
-            Import
-          </button>
-        </div>
+        <p className="mt-1 text-sm text-zinc-500">
+          Review, filter and manage
+          customer feedback.
+        </p>
       </div>
 
-      {/* Main Inbox Card */}
+      {/* --------------------------------
+          CSV Upload
+      -------------------------------- */}
 
-      <div className="space-y-4">
+      <section>
+        <CSVUpload />
+      </section>
+
+      {/* --------------------------------
+          Simulated Channels
+      -------------------------------- */}
+
+      <section>
+        <SimulatedChannels />
+      </section>
+
+      {/* --------------------------------
+          Inbox
+      -------------------------------- */}
+
+      <section className="space-y-4">
         <InboxTable
           feedback={formattedFeedback}
           themes={themes}
@@ -469,6 +483,8 @@ export default async function InboxPage({
           </p>
 
           <div className="flex items-center gap-2">
+            {/* Previous */}
+
             {currentPage > 1 ? (
               <Link
                 href={buildPageUrl(
@@ -484,11 +500,16 @@ export default async function InboxPage({
               </span>
             )}
 
+            {/* Current page */}
+
             <span className="min-w-10 rounded-lg bg-zinc-900 px-3.5 py-2 text-center text-sm font-medium text-white">
               {currentPage}
             </span>
 
-            {currentPage < totalPages ? (
+            {/* Next */}
+
+            {currentPage <
+            totalPages ? (
               <Link
                 href={buildPageUrl(
                   currentPage + 1
@@ -504,7 +525,7 @@ export default async function InboxPage({
             )}
           </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }
