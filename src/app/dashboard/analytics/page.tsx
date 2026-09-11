@@ -12,517 +12,538 @@ import RatingChart from "./RatingChart";
 import ThemeImpactChart from "./ThemeImpactChart";
 
 type AnalyticsPageProps = {
-  searchParams: {
-    range?: string;
-  };
+    searchParams: {
+        range?: string;
+    };
 };
 
 export default async function AnalyticsPage({
-  searchParams,
+    searchParams,
 }: AnalyticsPageProps) {
-  // --------------------------------
-  // Authentication
-  // --------------------------------
+    // --------------------------------
+    // Authentication
+    // --------------------------------
 
-  const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions);
 
-  if (!session) {
-    redirect("/login");
-  }
-
-  const workspaceId = session.user.workspaceId;
-
-  if (!workspaceId) {
-    return (
-      <main className="min-h-screen bg-gray-50 p-8">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6">
-          <h1 className="text-lg font-semibold text-red-700">
-            Workspace not found
-          </h1>
-
-          <p className="mt-2 text-sm text-red-600">
-            Your account is not connected to a workspace.
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  // --------------------------------
-  // Date range
-  // --------------------------------
-
-  const selectedRange = searchParams.range ?? "30";
-
-  let rangeStart: Date | undefined;
-
-  if (
-    selectedRange === "7" ||
-    selectedRange === "30" ||
-    selectedRange === "90"
-  ) {
-    const days = Number(selectedRange);
-
-    rangeStart = new Date();
-
-    rangeStart.setDate(
-      rangeStart.getDate() - days
-    );
-  }
-
-  // --------------------------------
-  // Feedback filter
-  // --------------------------------
-
-  const feedbackWhere = {
-    workspaceId,
-    ...(rangeStart
-      ? {
-          createdAt: {
-            gte: rangeStart,
-          },
-        }
-      : {}),
-  };
-
-  // --------------------------------
-  // Get feedback
-  // --------------------------------
-
-  const feedback = await prisma.feedback.findMany({
-    where: feedbackWhere,
-    select: {
-      id: true,
-      createdAt: true,
-      sentiment: true,
-      source: true,
-      rating: true,
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-  });
-
-  // --------------------------------
-  // Overview
-  // --------------------------------
-
-  const totalFeedback = feedback.length;
-
-  const ratedFeedback = feedback.filter(
-    (item) => item.rating !== null
-  );
-
-  const averageRating =
-    ratedFeedback.length > 0
-      ? (
-          ratedFeedback.reduce(
-            (sum, item) =>
-              sum + (item.rating ?? 0),
-            0
-          ) / ratedFeedback.length
-        ).toFixed(1)
-      : "0.0";
-
-  const negativeFeedback = feedback.filter(
-    (item) => item.sentiment === "NEGATIVE"
-  ).length;
-
-  const positiveFeedback = feedback.filter(
-    (item) => item.sentiment === "POSITIVE"
-  ).length;
-
-  // --------------------------------
-  // Feedback volume
-  // --------------------------------
-
-  const volumeMap = new Map<
-    string,
-    {
-      date: string;
-      count: number;
-    }
-  >();
-
-  feedback.forEach((item) => {
-    const date = new Date(item.createdAt)
-      .toISOString()
-      .split("T")[0];
-
-    const existing = volumeMap.get(date);
-
-    if (existing) {
-      existing.count += 1;
-    } else {
-      volumeMap.set(date, {
-        date,
-        count: 1,
-      });
-    }
-  });
-
-  const volumeData = Array.from(
-    volumeMap.values()
-  );
-
-  // --------------------------------
-  // Sentiment trend
-  // --------------------------------
-
-  const sentimentMap = new Map<
-    string,
-    {
-      date: string;
-      positive: number;
-      neutral: number;
-      negative: number;
-    }
-  >();
-
-  feedback.forEach((item) => {
-    const date = new Date(item.createdAt)
-      .toISOString()
-      .split("T")[0];
-
-    let existing = sentimentMap.get(date);
-
-    if (!existing) {
-      existing = {
-        date,
-        positive: 0,
-        neutral: 0,
-        negative: 0,
-      };
-
-      sentimentMap.set(date, existing);
+    if (!session) {
+        redirect("/login");
     }
 
-    if (item.sentiment === "POSITIVE") {
-      existing.positive += 1;
+    const workspaceId = session.user.workspaceId;
+
+    if (!workspaceId) {
+        return (
+            <main className="min-h-screen bg-gray-50 p-8">
+                <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+                    <h1 className="text-lg font-semibold text-red-700">
+                        Workspace not found
+                    </h1>
+
+                    <p className="mt-2 text-sm text-red-600">
+                        Your account is not connected to a workspace.
+                    </p>
+                </div>
+            </main>
+        );
     }
 
-    if (item.sentiment === "NEUTRAL") {
-      existing.neutral += 1;
+    // --------------------------------
+    // Date range
+    // --------------------------------
+
+    const selectedRange = searchParams.range ?? "30";
+
+    let rangeStart: Date | undefined;
+
+    if (
+        selectedRange === "7" ||
+        selectedRange === "30" ||
+        selectedRange === "90"
+    ) {
+        const days = Number(selectedRange);
+
+        rangeStart = new Date();
+
+        rangeStart.setDate(
+            rangeStart.getDate() - days
+        );
     }
 
-    if (item.sentiment === "NEGATIVE") {
-      existing.negative += 1;
-    }
-  });
+    // --------------------------------
+    // Feedback filter
+    // --------------------------------
 
-  const sentimentTrendData = Array.from(
-    sentimentMap.values()
-  );
+    const feedbackWhere = {
+        workspaceId,
+        ...(rangeStart
+            ? {
+                createdAt: {
+                    gte: rangeStart,
+                },
+            }
+            : {}),
+    };
 
-  // --------------------------------
-  // Channel breakdown
-  // --------------------------------
+    // --------------------------------
+    // Get feedback
+    // --------------------------------
 
-  const channelMap = new Map<string, number>();
-
-  feedback.forEach((item) => {
-    const current =
-      channelMap.get(item.source) ?? 0;
-
-    channelMap.set(
-      item.source,
-      current + 1
-    );
-  });
-
-  const channelLabels: Record<
-    string,
-    string
-  > = {
-    WEBSITE: "Website",
-    EMAIL: "Email",
-    SUPPORT: "Support",
-    SURVEY: "Survey",
-    OTHER: "Other",
-  };
-
-  const channelData = Array.from(
-    channelMap.entries()
-  )
-    .map(([source, count]) => ({
-      name: channelLabels[source] ?? source,
-      count,
-    }))
-    .sort((a, b) => b.count - a.count);
-
-  // --------------------------------
-  // Rating distribution
-  // --------------------------------
-
-  const ratingData = [1, 2, 3, 4, 5].map(
-    (rating) => ({
-      rating: `${rating} Star`,
-      count: feedback.filter(
-        (item) => item.rating === rating
-      ).length,
-    })
-  );
-
-  // --------------------------------
-  // Theme impact
-  // --------------------------------
-
-  const feedbackIds = feedback.map(
-    (item) => item.id
-  );
-
-  const feedbackThemes =
-    feedbackIds.length > 0
-      ? await prisma.feedbackTheme.findMany({
-          where: {
-            feedbackId: {
-              in: feedbackIds,
-            },
-          },
-          select: {
-            feedbackId: true,
-            themeId: true,
-          },
-        })
-      : [];
-
-  const themeIds = Array.from(
-    new Set(
-      feedbackThemes.map(
-        (item) => item.themeId
-      )
-    )
-  );
-
-  const themes =
-    themeIds.length > 0
-      ? await prisma.theme.findMany({
-          where: {
-            id: {
-              in: themeIds,
-            },
-            workspaceId,
-          },
-          select: {
+    const feedback = await prisma.feedback.findMany({
+        where: feedbackWhere,
+        select: {
             id: true,
-            name: true,
-          },
-        })
-      : [];
+            createdAt: true,
+            sentiment: true,
+            source: true,
+            rating: true,
+        },
+        orderBy: {
+            createdAt: "asc",
+        },
+    });
 
-  const feedbackById = new Map(
-    feedback.map((item) => [
-      item.id,
-      item,
-    ])
-  );
+    // --------------------------------
+    // Overview
+    // --------------------------------
 
-  const themeImpactMap = new Map<
-    string,
-    {
-      themeId: string;
-      name: string;
-      mentions: number;
-      negative: number;
-    }
-  >();
+    const totalFeedback = feedback.length;
 
-  feedbackThemes.forEach((relation) => {
-    const theme = themes.find(
-      (item) =>
-        item.id === relation.themeId
+    const ratedFeedback = feedback.filter(
+        (item) => item.rating !== null
     );
 
-    const feedbackItem =
-      feedbackById.get(
-        relation.feedbackId
-      );
+    const averageRating =
+        ratedFeedback.length > 0
+            ? (
+                ratedFeedback.reduce(
+                    (sum, item) =>
+                        sum + (item.rating ?? 0),
+                    0
+                ) / ratedFeedback.length
+            ).toFixed(1)
+            : "0.0";
 
-    if (!theme || !feedbackItem) {
-      return;
-    }
+    const negativeFeedback = feedback.filter(
+        (item) => item.sentiment === "NEGATIVE"
+    ).length;
 
-    const existing =
-      themeImpactMap.get(theme.id);
+    const positiveFeedback = feedback.filter(
+        (item) => item.sentiment === "POSITIVE"
+    ).length;
 
-    if (existing) {
-      existing.mentions += 1;
+    // --------------------------------
+    // Feedback volume
+    // --------------------------------
 
-      if (
-        feedbackItem.sentiment ===
-        "NEGATIVE"
-      ) {
-        existing.negative += 1;
-      }
-    } else {
-      themeImpactMap.set(theme.id, {
-        themeId: theme.id,
-        name: theme.name,
-        mentions: 1,
-        negative:
-          feedbackItem.sentiment ===
-          "NEGATIVE"
-            ? 1
-            : 0,
-      });
-    }
-  });
+    const volumeMap = new Map<
+        string,
+        {
+            date: string;
+            count: number;
+        }
+    >();
 
-  const themeImpactData = Array.from(
-    themeImpactMap.values()
-  )
-    .map((theme) => ({
-      name: theme.name,
-      mentions: theme.mentions,
-      negative: theme.negative,
-      negativeRate:
-        theme.mentions > 0
-          ? Math.round(
-              (theme.negative /
-                theme.mentions) *
-                100
-            )
-          : 0,
-    }))
-    .sort(
-      (a, b) =>
-        b.mentions - a.mentions
+    feedback.forEach((item) => {
+        const date = new Date(item.createdAt)
+            .toISOString()
+            .split("T")[0];
+
+        const existing = volumeMap.get(date);
+
+        if (existing) {
+            existing.count += 1;
+        } else {
+            volumeMap.set(date, {
+                date,
+                count: 1,
+            });
+        }
+    });
+
+    const volumeData = Array.from(
+        volumeMap.values()
+    );
+
+    // --------------------------------
+    // Sentiment trend
+    // --------------------------------
+
+    const sentimentMap = new Map<
+        string,
+        {
+            date: string;
+            positive: number;
+            neutral: number;
+            negative: number;
+        }
+    >();
+
+    feedback.forEach((item) => {
+        const date = new Date(item.createdAt)
+            .toISOString()
+            .split("T")[0];
+
+        let existing = sentimentMap.get(date);
+
+        if (!existing) {
+            existing = {
+                date,
+                positive: 0,
+                neutral: 0,
+                negative: 0,
+            };
+
+            sentimentMap.set(date, existing);
+        }
+
+        if (item.sentiment === "POSITIVE") {
+            existing.positive += 1;
+        }
+
+        if (item.sentiment === "NEUTRAL") {
+            existing.neutral += 1;
+        }
+
+        if (item.sentiment === "NEGATIVE") {
+            existing.negative += 1;
+        }
+    });
+
+    const sentimentTrendData = Array.from(
+        sentimentMap.values()
+    );
+
+    // --------------------------------
+    // Channel breakdown
+    // --------------------------------
+
+    const channelMap = new Map<string, number>();
+
+    feedback.forEach((item) => {
+        const current =
+            channelMap.get(item.source) ?? 0;
+
+        channelMap.set(
+            item.source,
+            current + 1
+        );
+    });
+
+    const channelLabels: Record<
+        string,
+        string
+    > = {
+        WEBSITE: "Website",
+        EMAIL: "Email",
+        SUPPORT: "Support",
+        SURVEY: "Survey",
+        OTHER: "Other",
+    };
+
+    const channelData = Array.from(
+        channelMap.entries()
     )
-    .slice(0, 10);
+        .map(([source, count]) => ({
+            name: channelLabels[source] ?? source,
+            count,
+        }))
+        .sort((a, b) => b.count - a.count);
 
-  // --------------------------------
-  // Selected range label
-  // --------------------------------
+    // --------------------------------
+    // Rating distribution
+    // --------------------------------
 
-  const rangeLabel =
-    selectedRange === "7"
-      ? "Last 7 Days"
-      : selectedRange === "30"
-      ? "Last 30 Days"
-      : selectedRange === "90"
-      ? "Last 90 Days"
-      : "All Time";
+    const ratingData = [1, 2, 3, 4, 5].map(
+        (rating) => ({
+            rating: `${rating} Star`,
+            count: feedback.filter(
+                (item) => item.rating === rating
+            ).length,
+        })
+    );
 
-  // --------------------------------
-  // UI
-  // --------------------------------
+    // --------------------------------
+    // Theme impact
+    // --------------------------------
 
-  return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      {/* Header */}
+    const feedbackIds = feedback.map(
+        (item) => item.id
+    );
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Analytics
-        </h1>
+    const feedbackThemes =
+        feedbackIds.length > 0
+            ? await prisma.feedbackTheme.findMany({
+                where: {
+                    feedbackId: {
+                        in: feedbackIds,
+                    },
+                },
+                select: {
+                    feedbackId: true,
+                    themeId: true,
+                },
+            })
+            : [];
 
-        <p className="mt-2 text-gray-500">
-          Understand feedback volume, sentiment,
-          channels, ratings, and customer themes.
-        </p>
-      </div>
+    const themeIds = Array.from(
+        new Set(
+            feedbackThemes.map(
+                (item) => item.themeId
+            )
+        )
+    );
 
-      {/* Filters */}
+    const themes =
+        themeIds.length > 0
+            ? await prisma.theme.findMany({
+                where: {
+                    id: {
+                        in: themeIds,
+                    },
+                    workspaceId,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                },
+            })
+            : [];
 
-      <AnalyticsFilters />
+    const feedbackById = new Map(
+        feedback.map((item) => [
+            item.id,
+            item,
+        ])
+    );
 
-      {/* Active Range */}
+    const themeImpactMap = new Map<
+        string,
+        {
+            themeId: string;
+            name: string;
+            mentions: number;
+            negative: number;
+        }
+    >();
 
-      <div className="mb-5 text-sm text-gray-500">
-        Showing analytics for{" "}
-        <span className="font-medium text-gray-700">
-          {rangeLabel}
-        </span>
-      </div>
+    feedbackThemes.forEach((relation) => {
+        const theme = themes.find(
+            (item) =>
+                item.id === relation.themeId
+        );
 
-      {/* Overview */}
+        const feedbackItem =
+            feedbackById.get(
+                relation.feedbackId
+            );
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">
-            Total Feedback
-          </p>
+        if (!theme || !feedbackItem) {
+            return;
+        }
 
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {totalFeedback}
-          </h2>
+        const existing =
+            themeImpactMap.get(theme.id);
 
-          <p className="mt-2 text-xs text-gray-500">
-            Feedback in selected period
-          </p>
-        </div>
+        if (existing) {
+            existing.mentions += 1;
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">
-            Average Rating
-          </p>
+            if (
+                feedbackItem.sentiment ===
+                "NEGATIVE"
+            ) {
+                existing.negative += 1;
+            }
+        } else {
+            themeImpactMap.set(theme.id, {
+                themeId: theme.id,
+                name: theme.name,
+                mentions: 1,
+                negative:
+                    feedbackItem.sentiment ===
+                        "NEGATIVE"
+                        ? 1
+                        : 0,
+            });
+        }
+    });
 
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {averageRating}
-            <span className="ml-1 text-lg text-gray-400">
-              / 5
-            </span>
-          </h2>
+    const themeImpactData = Array.from(
+        themeImpactMap.values()
+    )
+        .map((theme) => ({
+            name: theme.name,
+            mentions: theme.mentions,
+            negative: theme.negative,
+            negativeRate:
+                theme.mentions > 0
+                    ? Math.round(
+                        (theme.negative /
+                            theme.mentions) *
+                        100
+                    )
+                    : 0,
+        }))
+        .sort(
+            (a, b) =>
+                b.mentions - a.mentions
+        )
+        .slice(0, 10);
 
-          <p className="mt-2 text-xs text-gray-500">
-            Based on rated feedback
-          </p>
-        </div>
+    // --------------------------------
+    // Selected range label
+    // --------------------------------
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">
-            Positive Feedback
-          </p>
+    const rangeLabel =
+        selectedRange === "7"
+            ? "Last 7 Days"
+            : selectedRange === "30"
+                ? "Last 30 Days"
+                : selectedRange === "90"
+                    ? "Last 90 Days"
+                    : "All Time";
 
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {positiveFeedback}
-          </h2>
+    // --------------------------------
+    // UI
+    // --------------------------------
 
-          <p className="mt-2 text-xs text-gray-500">
-            Positive sentiment records
-          </p>
-        </div>
+    return (
+        <main className="min-h-screen bg-gray-50 p-8">
+            {/* Header */}
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">
-            Negative Feedback
-          </p>
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900">
+                    Analytics
+                </h1>
 
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {negativeFeedback}
-          </h2>
+                <p className="mt-2 text-gray-500">
+                    Understand feedback volume, sentiment,
+                    channels, ratings, and customer themes.
+                </p>
+            </div>
 
-          <p className="mt-2 text-xs text-gray-500">
-            Records requiring attention
-          </p>
-        </div>
-      </div>
+            {/* Filters */}
 
-      {/* Volume + Sentiment */}
+            <AnalyticsFilters />
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <VolumeChart data={volumeData} />
+            {/* Empty State */}
 
-        <SentimentTrendChart
-          data={sentimentTrendData}
-        />
-      </div>
+            {totalFeedback === 0 && (
+                <div className="mb-6 rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-xl">
+                        📊
+                    </div>
 
-      {/* Channels + Ratings */}
+                    <h2 className="mt-4 text-lg font-semibold text-gray-900">
+                        No feedback data available
+                    </h2>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ChannelChart data={channelData} />
+                    <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
+                        There is no feedback in the selected date range.
+                        Try selecting a wider range or add new feedback
+                        from the Inbox.
+                    </p>
+                </div>
+            )}
 
-        <RatingChart data={ratingData} />
-      </div>
 
-      {/* Theme Impact */}
+            {/* Active Range */}
 
-      <div className="mt-6">
-        <ThemeImpactChart
-          data={themeImpactData}
-        />
-      </div>
-    </main>
-  );
+            <div className="mb-5 text-sm text-gray-500">
+                Showing analytics for{" "}
+                <span className="font-medium text-gray-700">
+                    {rangeLabel}
+                </span>
+            </div>
+
+            {/* Overview */}
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <p className="text-sm text-gray-500">
+                        Total Feedback
+                    </p>
+
+                    <h2 className="mt-2 text-3xl font-bold text-gray-900">
+                        {totalFeedback}
+                    </h2>
+
+                    <p className="mt-2 text-xs text-gray-500">
+                        Feedback in selected period
+                    </p>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <p className="text-sm text-gray-500">
+                        Average Rating
+                    </p>
+
+                    <h2 className="mt-2 text-3xl font-bold text-gray-900">
+                        {averageRating}
+                        <span className="ml-1 text-lg text-gray-400">
+                            / 5
+                        </span>
+                    </h2>
+
+                    <p className="mt-2 text-xs text-gray-500">
+                        Based on rated feedback
+                    </p>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <p className="text-sm text-gray-500">
+                        Positive Feedback
+                    </p>
+
+                    <h2 className="mt-2 text-3xl font-bold text-gray-900">
+                        {positiveFeedback}
+                    </h2>
+
+                    <p className="mt-2 text-xs text-gray-500">
+                        Positive sentiment records
+                    </p>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <p className="text-sm text-gray-500">
+                        Negative Feedback
+                    </p>
+
+                    <h2 className="mt-2 text-3xl font-bold text-gray-900">
+                        {negativeFeedback}
+                    </h2>
+
+                    <p className="mt-2 text-xs text-gray-500">
+                        Records requiring attention
+                    </p>
+                </div>
+            </div>
+
+            {/* Volume + Sentiment */}
+
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <VolumeChart data={volumeData} />
+
+                <SentimentTrendChart
+                    data={sentimentTrendData}
+                />
+            </div>
+
+            {/* Channels + Ratings */}
+
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <ChannelChart data={channelData} />
+
+                <RatingChart data={ratingData} />
+            </div>
+
+            {/* Theme Impact */}
+
+            <div className="mt-6">
+                <ThemeImpactChart
+                    data={themeImpactData}
+                />
+            </div>
+        </main>
+    );
 }
