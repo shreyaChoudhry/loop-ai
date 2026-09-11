@@ -4,13 +4,22 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/auth";
 import prisma from "@/lib/prisma";
 
+import AnalyticsFilters from "./AnalyticsFilters";
 import VolumeChart from "./VolumeChart";
 import SentimentTrendChart from "./SentimentTrendChart";
 import ChannelChart from "./ChannelChart";
 import RatingChart from "./RatingChart";
 import ThemeImpactChart from "./ThemeImpactChart";
 
-export default async function AnalyticsPage() {
+type AnalyticsPageProps = {
+  searchParams: {
+    range?: string;
+  };
+};
+
+export default async function AnalyticsPage({
+  searchParams,
+}: AnalyticsPageProps) {
   // --------------------------------
   // Authentication
   // --------------------------------
@@ -40,13 +49,48 @@ export default async function AnalyticsPage() {
   }
 
   // --------------------------------
-  // Get all feedback for workspace
+  // Date range
+  // --------------------------------
+
+  const selectedRange = searchParams.range ?? "30";
+
+  let rangeStart: Date | undefined;
+
+  if (
+    selectedRange === "7" ||
+    selectedRange === "30" ||
+    selectedRange === "90"
+  ) {
+    const days = Number(selectedRange);
+
+    rangeStart = new Date();
+
+    rangeStart.setDate(
+      rangeStart.getDate() - days
+    );
+  }
+
+  // --------------------------------
+  // Feedback filter
+  // --------------------------------
+
+  const feedbackWhere = {
+    workspaceId,
+    ...(rangeStart
+      ? {
+          createdAt: {
+            gte: rangeStart,
+          },
+        }
+      : {}),
+  };
+
+  // --------------------------------
+  // Get feedback
   // --------------------------------
 
   const feedback = await prisma.feedback.findMany({
-    where: {
-      workspaceId,
-    },
+    where: feedbackWhere,
     select: {
       id: true,
       createdAt: true,
@@ -60,7 +104,7 @@ export default async function AnalyticsPage() {
   });
 
   // --------------------------------
-  // Basic overview
+  // Overview
   // --------------------------------
 
   const totalFeedback = feedback.length;
@@ -73,7 +117,8 @@ export default async function AnalyticsPage() {
     ratedFeedback.length > 0
       ? (
           ratedFeedback.reduce(
-            (sum, item) => sum + (item.rating ?? 0),
+            (sum, item) =>
+              sum + (item.rating ?? 0),
             0
           ) / ratedFeedback.length
         ).toFixed(1)
@@ -116,7 +161,9 @@ export default async function AnalyticsPage() {
     }
   });
 
-  const volumeData = Array.from(volumeMap.values()).slice(-30);
+  const volumeData = Array.from(
+    volumeMap.values()
+  );
 
   // --------------------------------
   // Sentiment trend
@@ -165,7 +212,7 @@ export default async function AnalyticsPage() {
 
   const sentimentTrendData = Array.from(
     sentimentMap.values()
-  ).slice(-30);
+  );
 
   // --------------------------------
   // Channel breakdown
@@ -174,12 +221,19 @@ export default async function AnalyticsPage() {
   const channelMap = new Map<string, number>();
 
   feedback.forEach((item) => {
-    const current = channelMap.get(item.source) ?? 0;
+    const current =
+      channelMap.get(item.source) ?? 0;
 
-    channelMap.set(item.source, current + 1);
+    channelMap.set(
+      item.source,
+      current + 1
+    );
   });
 
-  const channelLabels: Record<string, string> = {
+  const channelLabels: Record<
+    string,
+    string
+  > = {
     WEBSITE: "Website",
     EMAIL: "Email",
     SUPPORT: "Support",
@@ -187,7 +241,9 @@ export default async function AnalyticsPage() {
     OTHER: "Other",
   };
 
-  const channelData = Array.from(channelMap.entries())
+  const channelData = Array.from(
+    channelMap.entries()
+  )
     .map(([source, count]) => ({
       name: channelLabels[source] ?? source,
       count,
@@ -198,18 +254,22 @@ export default async function AnalyticsPage() {
   // Rating distribution
   // --------------------------------
 
-  const ratingData = [1, 2, 3, 4, 5].map((rating) => ({
-    rating: `${rating} Star`,
-    count: feedback.filter(
-      (item) => item.rating === rating
-    ).length,
-  }));
+  const ratingData = [1, 2, 3, 4, 5].map(
+    (rating) => ({
+      rating: `${rating} Star`,
+      count: feedback.filter(
+        (item) => item.rating === rating
+      ).length,
+    })
+  );
 
   // --------------------------------
   // Theme impact
   // --------------------------------
 
-  const feedbackIds = feedback.map((item) => item.id);
+  const feedbackIds = feedback.map(
+    (item) => item.id
+  );
 
   const feedbackThemes =
     feedbackIds.length > 0
@@ -227,7 +287,11 @@ export default async function AnalyticsPage() {
       : [];
 
   const themeIds = Array.from(
-    new Set(feedbackThemes.map((item) => item.themeId))
+    new Set(
+      feedbackThemes.map(
+        (item) => item.themeId
+      )
+    )
   );
 
   const themes =
@@ -247,7 +311,10 @@ export default async function AnalyticsPage() {
       : [];
 
   const feedbackById = new Map(
-    feedback.map((item) => [item.id, item])
+    feedback.map((item) => [
+      item.id,
+      item,
+    ])
   );
 
   const themeImpactMap = new Map<
@@ -262,23 +329,29 @@ export default async function AnalyticsPage() {
 
   feedbackThemes.forEach((relation) => {
     const theme = themes.find(
-      (item) => item.id === relation.themeId
+      (item) =>
+        item.id === relation.themeId
     );
 
-    const feedbackItem = feedbackById.get(
-      relation.feedbackId
-    );
+    const feedbackItem =
+      feedbackById.get(
+        relation.feedbackId
+      );
 
     if (!theme || !feedbackItem) {
       return;
     }
 
-    const existing = themeImpactMap.get(theme.id);
+    const existing =
+      themeImpactMap.get(theme.id);
 
     if (existing) {
       existing.mentions += 1;
 
-      if (feedbackItem.sentiment === "NEGATIVE") {
+      if (
+        feedbackItem.sentiment ===
+        "NEGATIVE"
+      ) {
         existing.negative += 1;
       }
     } else {
@@ -287,7 +360,8 @@ export default async function AnalyticsPage() {
         name: theme.name,
         mentions: 1,
         negative:
-          feedbackItem.sentiment === "NEGATIVE"
+          feedbackItem.sentiment ===
+          "NEGATIVE"
             ? 1
             : 0,
       });
@@ -304,12 +378,30 @@ export default async function AnalyticsPage() {
       negativeRate:
         theme.mentions > 0
           ? Math.round(
-              (theme.negative / theme.mentions) * 100
+              (theme.negative /
+                theme.mentions) *
+                100
             )
           : 0,
     }))
-    .sort((a, b) => b.mentions - a.mentions)
+    .sort(
+      (a, b) =>
+        b.mentions - a.mentions
+    )
     .slice(0, 10);
+
+  // --------------------------------
+  // Selected range label
+  // --------------------------------
+
+  const rangeLabel =
+    selectedRange === "7"
+      ? "Last 7 Days"
+      : selectedRange === "30"
+      ? "Last 30 Days"
+      : selectedRange === "90"
+      ? "Last 90 Days"
+      : "All Time";
 
   // --------------------------------
   // UI
@@ -319,18 +411,31 @@ export default async function AnalyticsPage() {
     <main className="min-h-screen bg-gray-50 p-8">
       {/* Header */}
 
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">
           Analytics
         </h1>
 
         <p className="mt-2 text-gray-500">
-          Understand feedback volume, sentiment, channels,
-          ratings, and customer themes.
+          Understand feedback volume, sentiment,
+          channels, ratings, and customer themes.
         </p>
       </div>
 
-      {/* Overview Cards */}
+      {/* Filters */}
+
+      <AnalyticsFilters />
+
+      {/* Active Range */}
+
+      <div className="mb-5 text-sm text-gray-500">
+        Showing analytics for{" "}
+        <span className="font-medium text-gray-700">
+          {rangeLabel}
+        </span>
+      </div>
+
+      {/* Overview */}
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -343,7 +448,7 @@ export default async function AnalyticsPage() {
           </h2>
 
           <p className="mt-2 text-xs text-gray-500">
-            Records in this workspace
+            Feedback in selected period
           </p>
         </div>
 
@@ -414,7 +519,9 @@ export default async function AnalyticsPage() {
       {/* Theme Impact */}
 
       <div className="mt-6">
-        <ThemeImpactChart data={themeImpactData} />
+        <ThemeImpactChart
+          data={themeImpactData}
+        />
       </div>
     </main>
   );
