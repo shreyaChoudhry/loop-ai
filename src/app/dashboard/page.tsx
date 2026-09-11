@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
-
 import prisma from "@/lib/prisma";
 
 import StatCard from "./StatCard";
@@ -25,11 +24,39 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  const workspaceId = session.user.workspaceId;
+
+  if (!workspaceId) {
+    return (
+      <main className="min-h-screen bg-gray-50 p-8">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+          <h1 className="text-lg font-semibold text-red-700">
+            Workspace not found
+          </h1>
+
+          <p className="mt-2 text-sm text-red-600">
+            Your account is not connected to a workspace.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // --------------------------------
+  // Base workspace filter
+  // --------------------------------
+
+  const workspaceFilter = {
+    workspaceId,
+  };
+
   // --------------------------------
   // Total feedback
   // --------------------------------
 
-  const totalFeedback = await prisma.feedback.count();
+  const totalFeedback = await prisma.feedback.count({
+    where: workspaceFilter,
+  });
 
   // --------------------------------
   // Positive feedback
@@ -37,6 +64,7 @@ export default async function DashboardPage() {
 
   const positiveFeedback = await prisma.feedback.count({
     where: {
+      ...workspaceFilter,
       sentiment: "POSITIVE",
     },
   });
@@ -47,6 +75,7 @@ export default async function DashboardPage() {
 
   const neutralFeedback = await prisma.feedback.count({
     where: {
+      ...workspaceFilter,
       sentiment: "NEUTRAL",
     },
   });
@@ -57,6 +86,7 @@ export default async function DashboardPage() {
 
   const negativeFeedback = await prisma.feedback.count({
     where: {
+      ...workspaceFilter,
       sentiment: "NEGATIVE",
     },
   });
@@ -66,11 +96,11 @@ export default async function DashboardPage() {
   // --------------------------------
 
   const sevenDaysAgo = new Date();
-
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   const newThisWeek = await prisma.feedback.count({
     where: {
+      ...workspaceFilter,
       createdAt: {
         gte: sevenDaysAgo,
       },
@@ -78,12 +108,17 @@ export default async function DashboardPage() {
   });
 
   // --------------------------------
-  // Percentages
+  // Sentiment percentages
   // --------------------------------
 
   const positivePercentage =
     totalFeedback > 0
       ? Math.round((positiveFeedback / totalFeedback) * 100)
+      : 0;
+
+  const neutralPercentage =
+    totalFeedback > 0
+      ? Math.round((neutralFeedback / totalFeedback) * 100)
       : 0;
 
   const negativePercentage =
@@ -96,6 +131,7 @@ export default async function DashboardPage() {
   // --------------------------------
 
   const feedbackRecords = await prisma.feedback.findMany({
+    where: workspaceFilter,
     select: {
       createdAt: true,
     },
@@ -136,6 +172,7 @@ export default async function DashboardPage() {
 
   const channelCounts = await prisma.feedback.groupBy({
     by: ["source"],
+    where: workspaceFilter,
     _count: {
       source: true,
     },
@@ -183,25 +220,47 @@ export default async function DashboardPage() {
   // Trending themes
   // --------------------------------
 
+  const workspaceFeedbackIds = await prisma.feedback.findMany({
+    where: workspaceFilter,
+    select: {
+      id: true,
+    },
+  });
+
+  const feedbackIds = workspaceFeedbackIds.map(
+    (feedback) => feedback.id
+  );
+
   const themeFeedbackCounts =
-    await prisma.feedbackTheme.groupBy({
-      by: ["themeId"],
-      _count: {
-        themeId: true,
-      },
-    });
+    feedbackIds.length > 0
+      ? await prisma.feedbackTheme.groupBy({
+          by: ["themeId"],
+          where: {
+            feedbackId: {
+              in: feedbackIds,
+            },
+          },
+          _count: {
+            themeId: true,
+          },
+        })
+      : [];
 
   const themeIds = themeFeedbackCounts.map(
     (item) => item.themeId
   );
 
-  const themes = await prisma.theme.findMany({
-    where: {
-      id: {
-        in: themeIds,
-      },
-    },
-  });
+  const themes =
+    themeIds.length > 0
+      ? await prisma.theme.findMany({
+          where: {
+            id: {
+              in: themeIds,
+            },
+            workspaceId,
+          },
+        })
+      : [];
 
   const topThemes = themes
     .map((theme) => {
@@ -222,6 +281,7 @@ export default async function DashboardPage() {
   // --------------------------------
 
   const recentFeedback = await prisma.feedback.findMany({
+    where: workspaceFilter,
     select: {
       id: true,
       content: true,
@@ -256,7 +316,7 @@ export default async function DashboardPage() {
 
       {/* Stats */}
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-5">
         <StatCard
           title="Total Feedback"
           value={totalFeedback}
@@ -273,6 +333,12 @@ export default async function DashboardPage() {
           title="Negative Sentiment"
           value={`${negativePercentage}%`}
           description={`${negativeFeedback} negative feedback`}
+        />
+
+        <StatCard
+          title="Neutral Sentiment"
+          value={`${neutralPercentage}%`}
+          description={`${neutralFeedback} neutral feedback`}
         />
 
         <StatCard
