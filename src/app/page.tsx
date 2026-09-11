@@ -180,7 +180,7 @@ export default function HomePage() {
                 <div>
                   <h3 className="text-sm font-bold">Welcome back, Jane! 👋</h3>
                   <p className="mt-1 text-[9px] text-gray-400">
-                    Here's what's happening with your feedback today.
+                    Here&apos;s what&apos;s happening with your feedback today.
                   </p>
 
                   {/* STATS */}

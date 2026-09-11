@@ -94,7 +94,7 @@ export default function RegisterPage() {
               <div className="absolute left-2 top-28 rounded-xl border border-white/80 bg-white/70 p-4 shadow-lg backdrop-blur">
                 <p className="text-xs font-semibold">Customer Voice</p>
                 <p className="mt-2 text-xs text-gray-500">
-                  "Easy to use!"
+                  &quot;Easy to use!&quot;
                 </p>
               </div>
 

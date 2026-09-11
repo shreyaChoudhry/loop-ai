@@ -310,7 +310,7 @@ export default async function DashboardPage() {
         </h1>
 
         <p className="mt-2 text-gray-500">
-          Here's what's happening with your feedback today.
+         Here&apos;s what&apos;s happening with your feedback today.
         </p>
       </div>
 
