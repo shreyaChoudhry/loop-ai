@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/auth";
+import { classifyFeedback } from "@/lib/classifier";
 
 // --------------------------------
 // CSV row structure
@@ -28,12 +29,6 @@ const VALID_SOURCES = [
   "SUPPORT",
   "SURVEY",
   "OTHER",
-] as const;
-
-const VALID_SENTIMENTS = [
-  "POSITIVE",
-  "NEUTRAL",
-  "NEGATIVE",
 ] as const;
 
 const VALID_STATUSES = [
@@ -62,9 +57,8 @@ function parseCSVLine(
   ) {
     const char = line[i];
 
-    // Handle quotes
+    // Escaped quote: ""
     if (char === '"') {
-      // Escaped quote: ""
       if (
         insideQuotes &&
         line[i + 1] === '"'
@@ -80,7 +74,7 @@ function parseCSVLine(
       continue;
     }
 
-    // Comma outside quotes = next column
+    // Comma outside quotes
     if (
       char === "," &&
       !insideQuotes
@@ -117,23 +111,25 @@ function parseCSV(
       line.trim()
     )
     .filter(
-      (line) => line.length > 0
+      (line) =>
+        line.length > 0
     );
 
   if (lines.length < 2) {
     return [];
   }
 
-  const headers = parseCSVLine(
-    lines[0]
-  ).map((header) =>
-    header
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "")
-  );
+  const headers =
+    parseCSVLine(
+      lines[0]
+    ).map((header) =>
+      header
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "")
+    );
 
-  // Required header
+  // Required headers
   if (
     !headers.includes(
       "content"
@@ -168,7 +164,8 @@ function parseCSV(
 
         switch (header) {
           case "content":
-            row.content = value;
+            row.content =
+              value;
             break;
 
           case "source":
@@ -176,6 +173,10 @@ function parseCSV(
               value.toUpperCase();
             break;
 
+          // These may exist in
+          // an old CSV, but Claude
+          // will generate the
+          // final AI classification.
           case "sentiment":
             row.sentiment =
               value.toUpperCase();
@@ -367,7 +368,8 @@ export async function POST(
     let rows: CSVRow[] = [];
 
     try {
-      rows = parseCSV(text);
+      rows =
+        parseCSV(text);
     } catch (error) {
       console.error(
         "CSV parsing error:",
@@ -404,47 +406,32 @@ export async function POST(
     }
 
     // --------------------------------
-    // Valid records
+    // Processing counters
     // --------------------------------
 
-    const validRecords: Array<{
-      content: string;
-
-      source:
-        | "WEBSITE"
-        | "EMAIL"
-        | "SUPPORT"
-        | "SURVEY"
-        | "OTHER";
-
-      sentiment?:
-        | "POSITIVE"
-        | "NEUTRAL"
-        | "NEGATIVE";
-
-      sentimentScore?: number;
-
-      category?: string;
-
-      rating?: number;
-
-      status:
-        | "NEW"
-        | "REVIEWED"
-        | "ACTIONED";
-
-      workspaceId: string;
-    }> = [];
-
+    let imported = 0;
     let failed = 0;
 
+    const errors: Array<{
+      row: number;
+      error: string;
+    }> = [];
+
     // --------------------------------
-    // Validate each row
+    // Process every CSV row
     // --------------------------------
 
     for (
-      const row of rows
+      let index = 0;
+      index < rows.length;
+      index++
     ) {
+      const row =
+        rows[index];
+
+      const rowNumber =
+        index + 2;
+
       const content =
         row.content?.trim() ||
         "";
@@ -453,20 +440,6 @@ export async function POST(
         row.source
           ?.trim()
           .toUpperCase() ||
-        "";
-
-      const sentiment =
-        row.sentiment
-          ?.trim()
-          .toUpperCase() ||
-        "";
-
-      const sentimentScoreValue =
-        row.sentimentScore?.trim() ||
-        "";
-
-      const category =
-        row.category?.trim() ||
         "";
 
       const ratingValue =
@@ -480,69 +453,65 @@ export async function POST(
         "NEW";
 
       // --------------------------------
-      // 1. Content validation
+      // Content validation
       // --------------------------------
 
       if (!content) {
         failed++;
+
+        errors.push({
+          row: rowNumber,
+          error:
+            "Content is required.",
+        });
+
         continue;
       }
 
       // --------------------------------
-      // 2. Source validation
+      // Source validation
       // --------------------------------
 
       if (
         !VALID_SOURCES.includes(
-          source as (typeof VALID_SOURCES)[number]
+          source as
+            (typeof VALID_SOURCES)[number]
         )
       ) {
         failed++;
+
+        errors.push({
+          row: rowNumber,
+          error:
+            `Invalid source: ${source}`,
+        });
+
         continue;
       }
 
       // --------------------------------
-      // 3. Sentiment validation
-      // --------------------------------
-
-      let parsedSentiment:
-        | "POSITIVE"
-        | "NEUTRAL"
-        | "NEGATIVE"
-        | undefined;
-
-      if (sentiment) {
-        if (
-          !VALID_SENTIMENTS.includes(
-            sentiment as (typeof VALID_SENTIMENTS)[number]
-          )
-        ) {
-          failed++;
-          continue;
-        }
-
-        parsedSentiment =
-          sentiment as
-            | "POSITIVE"
-            | "NEUTRAL"
-            | "NEGATIVE";
-      }
-
-      // --------------------------------
-      // 4. Status validation
+      // Status validation
       // --------------------------------
 
       if (
         !VALID_STATUSES.includes(
-          status as (typeof VALID_STATUSES)[number]
+          status as
+            (typeof VALID_STATUSES)[number]
         )
       ) {
         failed++;
+
+        errors.push({
+          row: rowNumber,
+          error:
+            `Invalid status: ${status}`,
+        });
+
         continue;
       }
 
       // --------------------------------
-      // 5. Rating validation
+      // Rating validation
       // --------------------------------
 
       let parsedRating:
@@ -551,7 +520,9 @@ export async function POST(
 
       if (ratingValue) {
         const rating =
-          Number(ratingValue);
+          Number(
+            ratingValue
+          );
 
         if (
           !Number.isInteger(
@@ -561,6 +532,13 @@ export async function POST(
           rating > 5
         ) {
           failed++;
+
+          errors.push({
+            row: rowNumber,
+            error:
+              "Rating must be an integer between 1 and 5.",
+          });
+
           continue;
         }
 
@@ -569,126 +547,144 @@ export async function POST(
       }
 
       // --------------------------------
-      // 6. Sentiment score validation
+      // Claude classification
       // --------------------------------
 
-      let parsedSentimentScore:
-        | number
-        | undefined;
-
-      if (
-        sentimentScoreValue
-      ) {
-        const score =
-          Number(
-            sentimentScoreValue
+      try {
+        const classification =
+          await classifyFeedback(
+            content
           );
 
-        if (
-          Number.isNaN(score) ||
-          score < -1 ||
-          score > 1
-        ) {
-          failed++;
-          continue;
-        }
+        // --------------------------------
+        // Clean themes
+        // --------------------------------
 
-        parsedSentimentScore =
-          score;
-      }
+        const cleanedThemes =
+          classification.themes
+            .map((theme) =>
+              theme.trim()
+            )
+            .filter(
+              (theme) =>
+                theme.length > 0
+            );
 
-      // --------------------------------
-      // Valid row
-      // --------------------------------
+        // --------------------------------
+        // Create feedback
+        // --------------------------------
 
-      validRecords.push({
-        content,
+        const feedback =
+          await prisma.feedback.create({
+            data: {
+              content,
 
-        source:
-          source as
-            | "WEBSITE"
-            | "EMAIL"
-            | "SUPPORT"
-            | "SURVEY"
-            | "OTHER",
+              source:
+                source as
+                  | "WEBSITE"
+                  | "EMAIL"
+                  | "SUPPORT"
+                  | "SURVEY"
+                  | "OTHER",
 
-        ...(parsedSentiment
-          ? {
+              // AI-generated
               sentiment:
-                parsedSentiment,
-            }
-          : {}),
+                classification.sentiment,
 
-        ...(parsedSentimentScore !==
-        undefined
-          ? {
               sentimentScore:
-                parsedSentimentScore,
-            }
-          : {}),
+                classification.sentimentScore,
 
-        ...(category
-          ? {
-              category,
-            }
-          : {}),
+              category:
+                classification.featureArea,
 
-        ...(parsedRating !==
-        undefined
-          ? {
-              rating:
-                parsedRating,
-            }
-          : {}),
+              ...(parsedRating !==
+              undefined
+                ? {
+                    rating:
+                      parsedRating,
+                  }
+                : {}),
 
-        status:
-          status as
-            | "NEW"
-            | "REVIEWED"
-            | "ACTIONED",
+              status:
+                status as
+                  | "NEW"
+                  | "REVIEWED"
+                  | "ACTIONED",
 
-        workspaceId,
-      });
-    }
+              workspaceId,
+            },
+          });
 
-    // --------------------------------
-    // If every row is invalid
-    // --------------------------------
+        // --------------------------------
+        // Create themes
+        // --------------------------------
 
-    if (
-      validRecords.length ===
-      0
-    ) {
-      return NextResponse.json({
-        success: true,
-        imported: 0,
-        failed,
-        total: rows.length,
-        message:
-          "No valid feedback rows were found.",
-      });
-    }
+        for (
+          const themeName of cleanedThemes
+        ) {
+          const theme =
+            await prisma.theme.upsert({
+              where: {
+                workspaceId_name: {
+                  workspaceId,
+                  name: themeName,
+                },
+              },
 
-    // --------------------------------
-    // Insert ONLY valid rows
-    // --------------------------------
+              update: {},
 
-    const result =
-      await prisma.feedback.createMany(
-        {
-          data: validRecords,
+              create: {
+                workspaceId,
+                name: themeName,
+              },
+            });
+
+          // --------------------------------
+          // Connect feedback to theme
+          // --------------------------------
+
+          await prisma.feedbackTheme.createMany({
+            data: [
+              {
+                feedbackId:
+                  feedback.id,
+
+                themeId:
+                  theme.id,
+              },
+            ],
+
+            skipDuplicates: true,
+          });
         }
-      );
+
+        imported++;
+      } catch (error) {
+        failed++;
+
+        console.error(
+          `CSV row ${rowNumber} classification/import error:`,
+          error
+        );
+
+        errors.push({
+          row: rowNumber,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to classify or save feedback.",
+        });
+      }
+    }
 
     // --------------------------------
-    // Response
+    // Final response
     // --------------------------------
 
     return NextResponse.json({
       success: true,
 
-      imported:
-        result.count,
+      imported,
 
       failed,
 
@@ -697,14 +693,15 @@ export async function POST(
 
       message:
         failed > 0
-          ? "CSV imported with some failed rows."
+          ? "CSV processed with some failed rows."
           : "CSV imported successfully.",
+
+      errors:
+        errors.length > 0
+          ? errors
+          : undefined,
     });
   } catch (error) {
-    // --------------------------------
-    // Never crash the application
-    // --------------------------------
-
     console.error(
       "CSV import error:",
       error
@@ -713,7 +710,9 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Failed to import CSV. Please check the file format and try again.",
+          error instanceof Error
+            ? error.message
+            : "Failed to import CSV. Please check the file format and try again.",
       },
       {
         status: 500,

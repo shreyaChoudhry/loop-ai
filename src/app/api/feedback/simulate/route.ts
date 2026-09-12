@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/auth";
+import { classifyFeedback } from "@/lib/classifier";
+
+// --------------------------------
+// Supported channels
+// --------------------------------
 
 type ChannelType =
   | "APP_REVIEWS"
@@ -10,74 +15,73 @@ type ChannelType =
   | "SURVEY_RESPONSES"
   | "SALES_NOTES";
 
-const CHANNEL_CONFIG = {
+// --------------------------------
+// Channel configuration
+// --------------------------------
+
+const CHANNEL_CONFIG: Record<
+  ChannelType,
+  {
+    source:
+      | "WEBSITE"
+      | "EMAIL"
+      | "SUPPORT"
+      | "SURVEY"
+      | "OTHER";
+  }
+> = {
   APP_REVIEWS: {
-    source: "OTHER" as const,
-    category: "App Review",
+    source: "WEBSITE",
   },
 
   SUPPORT_TICKETS: {
-    source: "SUPPORT" as const,
-    category: "Support",
+    source: "SUPPORT",
   },
 
   SURVEY_RESPONSES: {
-    source: "SURVEY" as const,
-    category: "Survey",
+    source: "SURVEY",
   },
 
   SALES_NOTES: {
-    source: "OTHER" as const,
-    category: "Sales",
+    source: "OTHER",
   },
 };
+
+// --------------------------------
+// Sample feedback
+// --------------------------------
 
 const SAMPLE_DATA: Record<
   ChannelType,
   Array<{
     content: string;
-    sentiment:
-      | "POSITIVE"
-      | "NEUTRAL"
-      | "NEGATIVE";
-    sentimentScore: number;
-    rating: number;
+    rating?: number;
   }>
 > = {
   APP_REVIEWS: [
     {
       content:
-        "The new mobile layout feels much easier to use.",
-      sentiment: "POSITIVE",
-      sentimentScore: 0.9,
+        "I really like the new dashboard experience.",
       rating: 5,
     },
     {
       content:
-        "The app looks good but loading is sometimes slow.",
-      sentiment: "NEUTRAL",
-      sentimentScore: 0.1,
-      rating: 3,
+        "The app is fast and the interface looks much cleaner now.",
+      rating: 5,
     },
     {
       content:
-        "The latest update made the navigation confusing.",
-      sentiment: "NEGATIVE",
-      sentimentScore: -0.7,
+        "Notifications are confusing and sometimes arrive very late.",
       rating: 2,
     },
     {
       content:
-        "I really like the new dashboard experience.",
-      sentiment: "POSITIVE",
-      sentimentScore: 0.85,
-      rating: 5,
+        "The login process works well but could be a little faster.",
+      rating: 4,
     },
     {
       content:
         "The app crashes when I open notifications.",
-      sentiment: "NEGATIVE",
-      sentimentScore: -0.9,
       rating: 1,
     },
   ],
@@ -85,117 +89,91 @@ const SAMPLE_DATA: Record<
   SUPPORT_TICKETS: [
     {
       content:
-        "Customer cannot reset the password.",
-      sentiment: "NEGATIVE",
-      sentimentScore: -0.8,
+        "I cannot reset my password even after requesting the reset email.",
       rating: 2,
     },
     {
       content:
-        "Support resolved the billing issue quickly.",
-      sentiment: "POSITIVE",
-      sentimentScore: 0.8,
+        "My payment went through successfully, thank you for the quick support.",
       rating: 5,
     },
     {
       content:
-        "Customer is waiting for a response from support.",
-      sentiment: "NEGATIVE",
-      sentimentScore: -0.6,
+        "The dashboard keeps loading and never shows my reports.",
       rating: 2,
     },
     {
       content:
-        "The support team explained the issue clearly.",
-      sentiment: "POSITIVE",
-      sentimentScore: 0.75,
-      rating: 4,
+        "Your support team resolved my issue very quickly.",
+      rating: 5,
     },
     {
       content:
-        "Customer asked how to change the account email.",
-      sentiment: "NEUTRAL",
-      sentimentScore: 0,
-      rating: 3,
+        "I am unable to update my account information.",
+      rating: 2,
     },
   ],
 
   SURVEY_RESPONSES: [
     {
       content:
-        "The checkout experience is smooth and simple.",
-      sentiment: "POSITIVE",
-      sentimentScore: 0.9,
+        "The product is easy to use and the overall experience is excellent.",
       rating: 5,
     },
     {
       content:
-        "Pricing is reasonable but could be clearer.",
-      sentiment: "NEUTRAL",
-      sentimentScore: 0.1,
+        "The reporting section needs more useful filters.",
       rating: 3,
     },
     {
       content:
-        "The product feels difficult to learn at first.",
-      sentiment: "NEGATIVE",
-      sentimentScore: -0.5,
-      rating: 2,
-    },
-    {
-      content:
-        "Overall I am happy with the experience.",
-      sentiment: "POSITIVE",
-      sentimentScore: 0.8,
+        "I am satisfied with the product but the mobile experience could improve.",
       rating: 4,
     },
     {
       content:
-        "Reporting needs more customization options.",
-      sentiment: "NEGATIVE",
-      sentimentScore: -0.6,
+        "The application feels slow during busy hours.",
       rating: 2,
+    },
+    {
+      content:
+        "Everything works as expected for my daily workflow.",
+      rating: 4,
     },
   ],
 
   SALES_NOTES: [
     {
       content:
-        "Customer requested better reporting for the team.",
-      sentiment: "NEUTRAL",
-      sentimentScore: 0.1,
-      rating: 3,
+        "The customer liked the dashboard but wants better analytics.",
+      rating: 4,
     },
     {
       content:
-        "Prospect liked the analytics and dashboard features.",
-      sentiment: "POSITIVE",
-      sentimentScore: 0.85,
-      rating: 5,
-    },
-    {
-      content:
-        "Customer is concerned about the current pricing.",
-      sentiment: "NEGATIVE",
-      sentimentScore: -0.6,
+        "The prospect is concerned about slow performance.",
       rating: 2,
     },
     {
       content:
-        "Team wants stronger export functionality.",
-      sentiment: "NEUTRAL",
-      sentimentScore: 0,
+        "The customer was very happy with the onboarding experience.",
+      rating: 5,
+    },
+    {
+      content:
+        "The buyer requested better notification controls.",
       rating: 3,
     },
     {
       content:
-        "Customer is very interested in the enterprise plan.",
-      sentiment: "POSITIVE",
-      sentimentScore: 0.9,
-      rating: 5,
+        "The customer wants more customization options.",
+      rating: 3,
     },
   ],
 };
+
+// --------------------------------
+// POST /api/feedback/simulate
+// --------------------------------
 
 export async function POST(
   request: Request
@@ -213,7 +191,8 @@ export async function POST(
     if (!session?.user) {
       return NextResponse.json(
         {
-          error: "Unauthorized.",
+          error:
+            "Unauthorized.",
         },
         {
           status: 401,
@@ -222,7 +201,7 @@ export async function POST(
     }
 
     // --------------------------------
-    // Permissions
+    // Permission
     // --------------------------------
 
     const role =
@@ -235,7 +214,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "You do not have permission to import simulated feedback.",
+            "You do not have permission to simulate feedback.",
         },
         {
           status: 403,
@@ -263,27 +242,21 @@ export async function POST(
     }
 
     // --------------------------------
-    // Read request
+    // Request body
     // --------------------------------
 
-    const body =
-      await request.json();
+    let body: {
+      channel?: ChannelType;
+    };
 
-    const channel =
-      body.channel as ChannelType;
-
-    // --------------------------------
-    // Validate channel
-    // --------------------------------
-
-    if (
-      !channel ||
-      !SAMPLE_DATA[channel]
-    ) {
+    try {
+      body =
+        await request.json();
+    } catch {
       return NextResponse.json(
         {
           error:
-            "Invalid simulated channel.",
+            "Request body is missing or invalid JSON.",
         },
         {
           status: 400,
@@ -291,9 +264,27 @@ export async function POST(
       );
     }
 
+    const channel =
+      body.channel;
+
     // --------------------------------
-    // Get configuration
+    // Validate channel
     // --------------------------------
+
+    if (
+      !channel ||
+      !CHANNEL_CONFIG[channel]
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid feedback channel.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     const config =
       CHANNEL_CONFIG[channel];
@@ -301,46 +292,147 @@ export async function POST(
     const samples =
       SAMPLE_DATA[channel];
 
-    // --------------------------------
-    // Prepare records
-    // --------------------------------
+    let imported = 0;
+    let failed = 0;
 
-    const records =
-      samples.map((sample) => ({
-        content:
-          sample.content,
-
-        source:
-          config.source,
-
-        sentiment:
-          sample.sentiment,
-
-        sentimentScore:
-          sample.sentimentScore,
-
-        category:
-          config.category,
-
-        rating:
-          sample.rating,
-
-        status:
-          "NEW" as const,
-
-        workspaceId,
-      }));
+    const errors: Array<{
+      index: number;
+      content: string;
+      error: string;
+    }> = [];
 
     // --------------------------------
-    // Insert
+    // Process samples
     // --------------------------------
 
-    const result =
-      await prisma.feedback.createMany(
-        {
-          data: records,
+    for (
+      let index = 0;
+      index < samples.length;
+      index++
+    ) {
+      const sample =
+        samples[index];
+
+      try {
+        // --------------------------------
+        // AI classification
+        // --------------------------------
+
+        const classification =
+          await classifyFeedback(
+            sample.content
+          );
+
+        // --------------------------------
+        // Clean themes
+        // --------------------------------
+
+        const cleanedThemes =
+          classification.themes
+            .map((theme) =>
+              theme.trim()
+            )
+            .filter(
+              (theme) =>
+                theme.length > 0
+            );
+
+        // --------------------------------
+        // Save feedback
+        // --------------------------------
+
+        const feedback =
+          await prisma.feedback.create({
+            data: {
+              content:
+                sample.content,
+
+              source:
+                config.source,
+
+              sentiment:
+                classification.sentiment,
+
+              sentimentScore:
+                classification.sentimentScore,
+
+              category:
+                classification.featureArea,
+
+              ...(sample.rating !==
+              undefined
+                ? {
+                    rating:
+                      sample.rating,
+                  }
+                : {}),
+
+              status: "NEW",
+
+              workspaceId,
+            },
+          });
+
+        // --------------------------------
+        // Save themes
+        // --------------------------------
+
+        for (
+          const themeName of cleanedThemes
+        ) {
+          const theme =
+            await prisma.theme.upsert({
+              where: {
+                workspaceId_name: {
+                  workspaceId,
+                  name: themeName,
+                },
+              },
+
+              update: {},
+
+              create: {
+                workspaceId,
+                name: themeName,
+              },
+            });
+
+          await prisma.feedbackTheme.createMany({
+            data: [
+              {
+                feedbackId:
+                  feedback.id,
+
+                themeId:
+                  theme.id,
+              },
+            ],
+
+            skipDuplicates: true,
+          });
         }
-      );
+
+        imported++;
+      } catch (error) {
+        failed++;
+
+        console.error(
+          `Failed to process simulated feedback: ${sample.content}`,
+          error
+        );
+
+        errors.push({
+          index: index + 1,
+          content:
+            sample.content,
+
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to classify or save feedback.",
+        });
+      }
+    }
 
     // --------------------------------
     // Response
@@ -348,21 +440,38 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      imported: result.count,
+
+      imported,
+
+      failed,
+
+      total:
+        samples.length,
+
       channel,
+
       message:
-        `${result.count} sample feedback records imported successfully.`,
+        failed > 0
+          ? `${imported} sample feedback records imported with ${failed} failures.`
+          : `${imported} sample feedback records imported successfully.`,
+
+      errors:
+        errors.length > 0
+          ? errors
+          : undefined,
     });
   } catch (error) {
     console.error(
-      "Simulated feedback import error:",
+      "Simulation error:",
       error
     );
 
     return NextResponse.json(
       {
         error:
-          "Failed to import simulated feedback.",
+          error instanceof Error
+            ? error.message
+            : "Failed to simulate feedback.",
       },
       {
         status: 500,
