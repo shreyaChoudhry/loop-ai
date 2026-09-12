@@ -22,7 +22,6 @@ type FeedbackItem = {
   sentiment: string | null;
   status: string;
   category: string | null;
-  rating: number | null;
   createdAt: Date;
   themes: ThemeItem[];
 };
@@ -30,16 +29,15 @@ type FeedbackItem = {
 type InboxTableProps = {
   feedback: FeedbackItem[];
   themes: ThemeItem[];
-
-  currentFilters: {
-    search: string;
-    source: string;
-    sentiment: string;
-    status: string;
-    theme: string;
-    date: string;
-    rating: string;
-  };
+ currentFilters: {
+  search: string;
+  source: string;
+  sentiment: string;
+  status: string;
+  theme: string;
+  date: string;
+  rating: string;
+};
 };
 
 export default function InboxTable({
@@ -47,7 +45,8 @@ export default function InboxTable({
   themes,
   currentFilters,
 }: InboxTableProps) {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const searchParams =
     useSearchParams();
@@ -57,8 +56,22 @@ export default function InboxTable({
       currentFilters.search
     );
 
+  const [
+    reclassifyingId,
+    setReclassifyingId,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    actionMessage,
+    setActionMessage,
+  ] = useState<string | null>(
+    null
+  );
+
   // --------------------------------
-  // Sync search with URL
+  // Keep search synced
   // --------------------------------
 
   useEffect(() => {
@@ -70,7 +83,7 @@ export default function InboxTable({
   ]);
 
   // --------------------------------
-  // Update URL filter
+  // Update filters
   // --------------------------------
 
   const updateFilter = (
@@ -91,9 +104,10 @@ export default function InboxTable({
       params.delete(key);
     }
 
-    // Always return to page 1
-    // after changing a filter
-    params.set("page", "1");
+    params.set(
+      "page",
+      "1"
+    );
 
     router.push(
       `/dashboard/inbox?${params.toString()}`
@@ -120,28 +134,61 @@ export default function InboxTable({
   };
 
   // --------------------------------
-  // Clear all
+  // Re-classify
   // --------------------------------
 
-  const clearFilters = () => {
-    setSearch("");
+  const handleReclassify = async (
+    feedbackId: string
+  ) => {
+    try {
+      setReclassifyingId(
+        feedbackId
+      );
 
-    router.push(
-      "/dashboard/inbox?page=1"
-    );
+      setActionMessage(null);
+
+      const response =
+        await fetch(
+          `/api/feedback/${feedbackId}/reclassify`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ??
+            "Failed to re-classify feedback."
+        );
+      }
+
+      setActionMessage(
+        "Feedback re-classified successfully."
+      );
+
+      router.refresh();
+    } catch (error) {
+      setActionMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to re-classify feedback."
+      );
+    } finally {
+      setReclassifyingId(
+        null
+      );
+    }
   };
 
-  const hasFilters =
-    currentFilters.search ||
-    currentFilters.source ||
-    currentFilters.sentiment ||
-    currentFilters.status ||
-    currentFilters.theme ||
-    currentFilters.date ||
-    currentFilters.rating;
-
   // --------------------------------
-  // Formatting helpers
+  // Formatting
   // --------------------------------
 
   const formatSource = (
@@ -201,29 +248,25 @@ export default function InboxTable({
   // --------------------------------
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-      {/* Search + filter area */}
+    <>
+      {/* Search */}
 
-      <div className="border-b border-zinc-200 p-5">
-        {/* Search */}
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value
-                )
-              }
-              onKeyDown={
-                handleSearchKeyDown
-              }
-              placeholder="Search feedback..."
-              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
-            />
-          </div>
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={search}
+            onChange={(event) =>
+              setSearch(
+                event.target.value
+              )
+            }
+            onKeyDown={
+              handleSearchKeyDown
+            }
+            placeholder="Search feedback..."
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+          />
 
           <button
             type="button"
@@ -235,12 +278,12 @@ export default function InboxTable({
             Search
           </button>
         </div>
+      </div>
 
-        {/* Filters */}
+      {/* Filters */}
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {/* Date */}
-
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
           <select
             value={
               currentFilters.date
@@ -251,26 +294,21 @@ export default function InboxTable({
                 event.target.value
               )
             }
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-700 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+            className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-purple-500"
           >
             <option value="">
               Date
             </option>
-
             <option value="today">
               Today
             </option>
-
             <option value="week">
               This Week
             </option>
-
             <option value="month">
               This Month
             </option>
           </select>
-
-          {/* Channel */}
 
           <select
             value={
@@ -282,34 +320,27 @@ export default function InboxTable({
                 event.target.value
               )
             }
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-700 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+            className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-purple-500"
           >
             <option value="">
               Channel
             </option>
-
             <option value="WEBSITE">
               Website
             </option>
-
             <option value="EMAIL">
               Email
             </option>
-
             <option value="SUPPORT">
               Support
             </option>
-
             <option value="SURVEY">
               Survey
             </option>
-
             <option value="OTHER">
               Other
             </option>
           </select>
-
-          {/* Sentiment */}
 
           <select
             value={
@@ -321,26 +352,21 @@ export default function InboxTable({
                 event.target.value
               )
             }
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-700 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+            className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-purple-500"
           >
             <option value="">
               Sentiment
             </option>
-
             <option value="POSITIVE">
               Positive
             </option>
-
             <option value="NEUTRAL">
               Neutral
             </option>
-
             <option value="NEGATIVE">
               Negative
             </option>
           </select>
-
-          {/* Status */}
 
           <select
             value={
@@ -352,26 +378,21 @@ export default function InboxTable({
                 event.target.value
               )
             }
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-700 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+            className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-purple-500"
           >
             <option value="">
               Status
             </option>
-
             <option value="NEW">
               New
             </option>
-
             <option value="REVIEWED">
               Reviewed
             </option>
-
             <option value="ACTIONED">
               Actioned
             </option>
           </select>
-
-          {/* Theme */}
 
           <select
             value={
@@ -383,10 +404,10 @@ export default function InboxTable({
                 event.target.value
               )
             }
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-700 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+            className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-purple-500"
           >
             <option value="">
-              Theme
+              Themes
             </option>
 
             {themes.map(
@@ -400,62 +421,23 @@ export default function InboxTable({
               )
             )}
           </select>
-
-          {/* Rating */}
-
-          <select
-            value={
-              currentFilters.rating
-            }
-            onChange={(event) =>
-              updateFilter(
-                "rating",
-                event.target.value
-              )
-            }
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-700 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
-          >
-            <option value="">
-              Rating
-            </option>
-
-            <option value="5">
-              ★★★★★ 5
-            </option>
-
-            <option value="4">
-              ★★★★☆ 4
-            </option>
-
-            <option value="3">
-              ★★★☆☆ 3
-            </option>
-
-            <option value="2">
-              ★★☆☆☆ 2
-            </option>
-
-            <option value="1">
-              ★☆☆☆☆ 1
-            </option>
-          </select>
         </div>
 
-        {/* Active filters */}
-
-        {hasFilters && (
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-xs text-zinc-500">
-              Filters are applied on the
-              server.
-            </p>
-
+        {(currentFilters.search ||
+          currentFilters.source ||
+          currentFilters.sentiment ||
+          currentFilters.status ||
+          currentFilters.theme ||
+          currentFilters.date) && (
+          <div className="mt-4">
             <button
               type="button"
-              onClick={
-                clearFilters
+              onClick={() =>
+                router.push(
+                  "/dashboard/inbox?page=1"
+                )
               }
-              className="text-sm font-medium text-purple-600 transition hover:text-purple-700"
+              className="text-sm font-medium text-purple-600 hover:text-purple-700"
             >
               Clear all filters
             </button>
@@ -463,242 +445,217 @@ export default function InboxTable({
         )}
       </div>
 
-      {/* Table header */}
+      {/* Action message */}
 
-      <div className="flex flex-col gap-1 border-b border-zinc-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-zinc-900">
+      {actionMessage && (
+        <div className="rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-700">
+          {actionMessage}
+        </div>
+      )}
+
+      {/* Feedback Table */}
+
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="border-b border-gray-200 px-6 py-4">
+          <h2 className="text-lg font-semibold text-gray-900">
             Customer Feedback
           </h2>
 
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-gray-500">
             Showing{" "}
             {feedback.length}{" "}
             feedback record
             {feedback.length !==
             1
               ? "s"
-              : ""}{" "}
-            on this page
+              : ""}
           </p>
         </div>
-      </div>
 
-      {/* Empty state */}
-
-      {feedback.length === 0 ? (
-        <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-xl">
-            📭
+        {feedback.length ===
+        0 ? (
+          <div className="flex min-h-48 items-center justify-center px-6">
+            <p className="text-sm text-gray-500">
+              No feedback matches
+              your filters.
+            </p>
           </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1200px] text-left">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Feedback
+                  </th>
 
-          <h3 className="text-sm font-semibold text-zinc-900">
-            No feedback found
-          </h3>
+                  <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Source
+                  </th>
 
-          <p className="mt-1 max-w-sm text-sm text-zinc-500">
-            No feedback matches your
-            current search and filters.
-          </p>
+                  <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Sentiment
+                  </th>
 
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={
-                clearFilters
-              }
-              className="mt-4 text-sm font-medium text-purple-600 hover:text-purple-700"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      ) : (
-        /* Table */
+                  <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Themes
+                  </th>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px] text-left">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50">
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Feedback
-                </th>
+                  <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Status
+                  </th>
 
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Source
-                </th>
+                  <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Date
+                  </th>
 
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Sentiment
-                </th>
+                  <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Action
+                  </th>
+                </tr>
+              </thead>
 
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Themes
-                </th>
+              <tbody>
+                {feedback.map(
+                  (item) => (
+                    <tr
+                      key={
+                        item.id
+                      }
+                      className="border-b border-gray-100 transition last:border-b-0 hover:bg-gray-50"
+                    >
+                      {/* Feedback */}
 
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Rating
-                </th>
-
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Status
-                </th>
-
-                <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Date
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {feedback.map(
-                (item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b border-zinc-100 transition last:border-b-0 hover:bg-zinc-50"
-                  >
-                    {/* Feedback */}
-
-                    <td className="max-w-md px-6 py-4">
-                      <Link
-                        href={`/dashboard/inbox/${item.id}`}
-                        className="block"
-                      >
-                        <p className="truncate text-sm font-medium text-zinc-900 transition hover:text-purple-600">
-                          {
-                            item.content
-                          }
-                        </p>
-
-                        {item.category && (
-                          <p className="mt-1 truncate text-xs text-zinc-400">
+                      <td className="max-w-md px-6 py-4">
+                        <Link
+                          href={`/dashboard/inbox/${item.id}`}
+                          className="block"
+                        >
+                          <p className="truncate text-sm font-medium text-gray-900 hover:text-purple-600">
                             {
-                              item.category
+                              item.content
                             }
                           </p>
+                        </Link>
+                      </td>
+
+                      {/* Source */}
+
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                        {formatSource(
+                          item.source
                         )}
-                      </Link>
-                    </td>
+                      </td>
 
-                    {/* Source */}
+                      {/* Sentiment */}
 
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-600">
-                      {formatSource(
-                        item.source
-                      )}
-                    </td>
-
-                    {/* Sentiment */}
-
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                          item.sentiment ===
-                          "POSITIVE"
-                            ? "bg-green-100 text-green-700"
-                            : item.sentiment ===
-                              "NEGATIVE"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-zinc-100 text-zinc-700"
-                        }`}
-                      >
-                        {formatSentiment(
-                          item.sentiment
-                        )}
-                      </span>
-                    </td>
-
-                    {/* Themes */}
-
-                    <td className="px-6 py-4">
-                      {item.themes
-                        .length ===
-                      0 ? (
-                        <span className="text-sm text-zinc-400">
-                          —
-                        </span>
-                      ) : (
-                        <div className="flex max-w-xs flex-wrap gap-1.5">
-                          {item.themes.map(
-                            (
-                              theme
-                            ) => (
-                              <span
-                                key={
-                                  theme.id
-                                }
-                                className="rounded-full bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700"
-                              >
-                                {
-                                  theme.name
-                                }
-                              </span>
-                            )
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                            item.sentiment ===
+                            "POSITIVE"
+                              ? "bg-green-100 text-green-700"
+                              : item.sentiment ===
+                                  "NEGATIVE"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {formatSentiment(
+                            item.sentiment
                           )}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Rating */}
-
-                    <td className="whitespace-nowrap px-6 py-4">
-                      {item.rating ===
-                      null ? (
-                        <span className="text-sm text-zinc-400">
-                          Not rated
                         </span>
-                      ) : (
-                        <span className="text-sm font-medium">
-                          <span className="text-amber-500">
-                            {"★".repeat(
-                              item.rating
-                            )}
+                      </td>
+
+                      {/* Themes */}
+
+                      <td className="px-6 py-4">
+                        {item.themes
+                          .length ===
+                        0 ? (
+                          <span className="text-sm text-gray-400">
+                            —
                           </span>
-
-                          <span className="text-zinc-300">
-                            {"★".repeat(
-                              5 -
-                                item.rating
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.themes.map(
+                              (
+                                theme
+                              ) => (
+                                <span
+                                  key={
+                                    theme.id
+                                  }
+                                  className="rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700"
+                                >
+                                  {
+                                    theme.name
+                                  }
+                                </span>
+                              )
                             )}
-                          </span>
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Status */}
-
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                          item.status ===
-                          "NEW"
-                            ? "bg-blue-100 text-blue-700"
-                            : item.status ===
-                              "REVIEWED"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {formatStatus(
-                          item.status
+                          </div>
                         )}
-                      </span>
-                    </td>
+                      </td>
 
-                    {/* Date */}
+                      {/* Status */}
 
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-500">
-                      {formatDate(
-                        item.createdAt
-                      )}
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                            item.status ===
+                            "NEW"
+                              ? "bg-blue-100 text-blue-700"
+                              : item.status ===
+                                  "REVIEWED"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {formatStatus(
+                            item.status
+                          )}
+                        </span>
+                      </td>
+
+                      {/* Date */}
+
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                        {formatDate(
+                          item.createdAt
+                        )}
+                      </td>
+
+                      {/* Action */}
+
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleReclassify(
+                              item.id
+                            )
+                          }
+                          disabled={
+                            reclassifyingId ===
+                            item.id
+                          }
+                          className="rounded-lg border border-purple-200 bg-white px-3 py-2 text-xs font-medium text-purple-700 transition hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {reclassifyingId ===
+                          item.id
+                            ? "Re-classifying..."
+                            : "Re-classify"}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
