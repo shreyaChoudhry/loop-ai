@@ -74,8 +74,7 @@ export default function ThemeTrendsChart({
 
           {themes.map(
             (
-              theme,
-              index
+              theme
             ) => (
               <Line
                 key={theme}
