@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Report = {
   id: string;
@@ -10,20 +10,57 @@ type Report = {
 };
 
 export default function ReportsPage() {
-  const [report, setReport] =
+  const [reports, setReports] =
+    useState<Report[]>([]);
+
+  const [selectedReport, setSelectedReport] =
     useState<Report | null>(null);
 
   const [loading, setLoading] =
+    useState(true);
+
+  const [generating, setGenerating] =
     useState(false);
 
   const [error, setError] =
     useState("");
 
-  async function generateReport() {
-    setLoading(true);
-    setError("");
-
+  async function loadReports() {
     try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        "/api/reports"
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ??
+            "Failed to load reports."
+        );
+      }
+
+      setReports(data.reports ?? []);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load reports."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function generateReport() {
+    try {
+      setGenerating(true);
+      setError("");
+
       const response = await fetch(
         "/api/reports/generate",
         {
@@ -46,7 +83,11 @@ export default function ReportsPage() {
         );
       }
 
-      setReport(data.report);
+      await loadReports();
+
+      setSelectedReport(
+        data.report
+      );
     } catch (error) {
       setError(
         error instanceof Error
@@ -54,9 +95,13 @@ export default function ReportsPage() {
           : "Failed to generate report."
       );
     } finally {
-      setLoading(false);
+      setGenerating(false);
     }
   }
+
+  useEffect(() => {
+    loadReports();
+  }, []);
 
   return (
     <main className="space-y-6">
@@ -68,18 +113,17 @@ export default function ReportsPage() {
 
           <p className="mt-1 text-sm text-gray-500">
             Weekly Voice of Customer
-            insights generated from
-            your feedback.
+            insights from your feedback.
           </p>
         </div>
 
         <button
           type="button"
           onClick={generateReport}
-          disabled={loading}
+          disabled={generating}
           className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading
+          {generating
             ? "Generating..."
             : "Generate Report"}
         </button>
@@ -91,68 +135,111 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {!report &&
-        !loading &&
-        !error && (
-          <section className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              No report generated yet
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Generate a weekly Voice of
-              Customer report from your
-              workspace feedback.
-            </p>
-
-            <button
-              type="button"
-              onClick={generateReport}
-              className="mt-5 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white"
-            >
-              Generate First Report
-            </button>
-          </section>
-        )}
-
-      {loading && (
+      {loading ? (
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="animate-pulse space-y-4">
-            <div className="h-6 w-2/5 rounded bg-gray-200" />
-            <div className="h-4 w-full rounded bg-gray-200" />
-            <div className="h-4 w-4/5 rounded bg-gray-200" />
-            <div className="h-32 w-full rounded bg-gray-200" />
+            <div className="h-6 w-1/3 rounded bg-gray-200" />
+            <div className="h-16 rounded bg-gray-200" />
+            <div className="h-16 rounded bg-gray-200" />
           </div>
         </section>
-      )}
-
-      {report && !loading && (
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 border-b border-gray-200 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {report.title}
+      ) : (
+        <>
+          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="border-b border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Report History
               </h2>
 
-              <p className="mt-1 text-xs text-gray-500">
-                Generated{" "}
-                {new Date(
-                  report.createdAt
-                ).toLocaleString()}
+              <p className="mt-1 text-sm text-gray-500">
+                Previously generated Voice of
+                Customer reports.
               </p>
             </div>
 
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-              Voice of Customer
-            </span>
-          </div>
+            {reports.length === 0 ? (
+              <div className="p-10 text-center">
+                <p className="text-sm font-medium text-gray-700">
+                  No reports yet.
+                </p>
 
-          <div className="p-6">
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-gray-700">
-              {report.content}
-            </pre>
-          </div>
-        </section>
+                <p className="mt-1 text-sm text-gray-500">
+                  Generate your first customer
+                  insights report.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {reports.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-1 text-xs text-gray-500">
+                        Generated{" "}
+                        {new Date(
+                          item.createdAt
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedReport(
+                          item
+                        )
+                      }
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      View
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {selectedReport && (
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="flex flex-col gap-4 border-b border-gray-200 p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {selectedReport.title}
+                  </h2>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Generated{" "}
+                    {new Date(
+                      selectedReport.createdAt
+                    ).toLocaleString()}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedReport(null)
+                  }
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="p-6">
+                <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-gray-700">
+                  {selectedReport.content}
+                </pre>
+              </div>
+            </section>
+          )}
+        </>
       )}
     </main>
   );
