@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
-type ReportFeedback = {
+
+type FeedbackRow = {
   id: string;
   content: string;
   sentiment: string | null;
@@ -10,22 +11,15 @@ type ReportFeedback = {
   createdAt: Date;
 };
 
-type ReportTheme = {
+type ThemeStat = {
   name: string;
-  count: number;
-  negative: number;
+  total: number;
   positive: number;
-  averageSentiment: number;
+  negative: number;
+  neutral: number;
 };
 
-export type VoiceOfCustomerReport = {
-  title: string;
-  periodStart: Date;
-  periodEnd: Date;
-  content: string;
-};
-
-function formatDate(date: Date): string {
+function formatDate(date: Date) {
   return date.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -33,309 +27,100 @@ function formatDate(date: Date): string {
   });
 }
 
-function formatPercent(value: number): string {
-  return `${Math.round(value * 100)}%`;
+function percent(value: number, total: number) {
+  if (!total) return 0;
+
+  return Math.round((value / total) * 100);
 }
 
-function getWeekRange(
-  latestDate: Date
-): {
-  start: Date;
-  end: Date;
-} {
-  const end = new Date(latestDate);
-
-  end.setHours(23, 59, 59, 999);
-
-  const start = new Date(end);
-
-  start.setDate(
-    start.getDate() - 6
-  );
-
-  start.setHours(0, 0, 0, 0);
-
-  return {
-    start,
-    end,
-  };
-}
-
-function buildReportContent(
-  feedback: ReportFeedback[],
-  themes: ReportTheme[],
-  periodStart: Date,
-  periodEnd: Date
-): string {
-  const total = feedback.length;
-
-  const positive = feedback.filter(
-    (item) =>
-      item.sentiment === "POSITIVE"
-  ).length;
-
-  const negative = feedback.filter(
-    (item) =>
-      item.sentiment === "NEGATIVE"
-  ).length;
-
-  const neutral = feedback.filter(
-    (item) =>
-      item.sentiment === "NEUTRAL"
-  ).length;
-
-  const positiveRate =
-    total > 0
-      ? positive / total
-      : 0;
-
-  const negativeRate =
-    total > 0
-      ? negative / total
-      : 0;
-
-  const topComplaints = [
-    ...themes,
-  ]
-    .filter(
-      (theme) =>
-        theme.negative > 0
-    )
-    .sort(
-      (a, b) =>
-        b.negative - a.negative
-    )
-    .slice(0, 5);
-
-  const customerWins = [
-    ...themes,
-  ]
-    .filter(
-      (theme) =>
-        theme.positive > 0
-    )
-    .sort(
-      (a, b) =>
-        b.positive - a.positive
-    )
-    .slice(0, 5);
-
-  const emergingIssues = [
-    ...themes,
-  ]
-    .filter(
-      (theme) =>
-        theme.negative > 0
-    )
-    .sort(
-      (a, b) =>
-        b.count - a.count
-    )
-    .slice(0, 3);
-
-  const recommendedActions =
-    topComplaints
-      .slice(0, 3)
-      .map(
-        (theme, index) =>
-          `${index + 1}. Investigate ${theme.name.toLowerCase()} based on ${theme.negative} negative feedback item${theme.negative === 1 ? "" : "s"}.`
-      );
-
-  const notableNegativeQuotes =
-    feedback
-      .filter(
-        (item) =>
-          item.sentiment ===
-          "NEGATIVE"
-      )
-      .sort(
-        (a, b) =>
-          (a.rating ?? 3) -
-          (b.rating ?? 3)
-      )
-      .slice(0, 3);
-
-  const notablePositiveQuotes =
-    feedback
-      .filter(
-        (item) =>
-          item.sentiment ===
-          "POSITIVE"
-      )
-      .sort(
-        (a, b) =>
-          (b.rating ?? 0) -
-          (a.rating ?? 0)
-      )
-      .slice(0, 3);
-
-  const complaintText =
-    topComplaints.length > 0
-      ? topComplaints
-          .map(
-            (theme) =>
-              `• ${theme.name} — ${theme.negative} negative feedback item${theme.negative === 1 ? "" : "s"}`
-          )
-          .join("\n")
-      : "• No significant complaints identified in this period.";
-
-  const winsText =
-    customerWins.length > 0
-      ? customerWins
-          .map(
-            (theme) =>
-              `• ${theme.name} — ${theme.positive} positive feedback item${theme.positive === 1 ? "" : "s"}`
-          )
-          .join("\n")
-      : "• No clear customer wins identified in this period.";
-
-  const emergingText =
-    emergingIssues.length > 0
-      ? emergingIssues
-          .map(
-            (theme) =>
-              `• ${theme.name} — ${theme.count} total feedback item${theme.count === 1 ? "" : "s"}`
-          )
-          .join("\n")
-      : "• No emerging issues identified.";
-
-  const actionsText =
-    recommendedActions.length > 0
-      ? recommendedActions.join("\n")
-      : "1. Continue monitoring customer feedback.";
-
-  const negativeQuotesText =
-    notableNegativeQuotes.length > 0
-      ? notableNegativeQuotes
-          .map(
-            (item) =>
-              `• "${item.content}"`
-          )
-          .join("\n")
-      : "• No negative customer quotes available.";
-
-  const positiveQuotesText =
-    notablePositiveQuotes.length > 0
-      ? notablePositiveQuotes
-          .map(
-            (item) =>
-              `• "${item.content}"`
-          )
-          .join("\n")
-      : "• No positive customer quotes available.";
-
-  return `VOICE OF CUSTOMER
-
-Weekly Customer Insights
-${formatDate(periodStart)} - ${formatDate(periodEnd)}
-
-EXECUTIVE SUMMARY
-────────────────────────
-
-LOOP analyzed ${total} customer feedback item${total === 1 ? "" : "s"} during this period.
-
-Positive feedback: ${positive} (${formatPercent(positiveRate)})
-Neutral feedback: ${neutral}
-Negative feedback: ${negative} (${formatPercent(negativeRate)})
-
-TOP COMPLAINTS
-────────────────────────
-
-${complaintText}
-
-CUSTOMER WINS
-────────────────────────
-
-${winsText}
-
-EMERGING ISSUES
-────────────────────────
-
-${emergingText}
-
-RECOMMENDED ACTIONS
-────────────────────────
-
-${actionsText}
-
-NOTABLE NEGATIVE FEEDBACK
-────────────────────────
-
-${negativeQuotesText}
-
-CUSTOMER WINS — NOTABLE FEEDBACK
-────────────────────────
-
-${positiveQuotesText}
-
-REPORT METHODOLOGY
-────────────────────────
-
-This report is generated from feedback belonging to the authenticated workspace and the selected reporting period. Theme and sentiment statistics are calculated from the stored feedback classifications.
-
-Total feedback analyzed: ${total}
-`;
+function clean(text: string) {
+  return text
+    .replace(/\r/g, "")
+    .replace(/—/g, "-")
+    .replace(/–/g, "-")
+    .replace(/→/g, "->")
+    .replace(/←/g, "<-")
+    .replace(/•/g, "")
+    .replace(/’/g, "'")
+    .replace(/“/g, '"')
+    .replace(/”/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export async function generateVoiceOfCustomerReport(
   workspaceId: string,
   startDate?: Date,
   endDate?: Date
-): Promise<VoiceOfCustomerReport> {
-  let periodStart: Date;
-  let periodEnd: Date;
+) {
+  /*
+   * =========================================================
+   * REPORT PERIOD
+   * =========================================================
+   */
 
-  if (startDate && endDate) {
-    periodStart = new Date(startDate);
-    periodEnd = new Date(endDate);
-
-    periodStart.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    periodEnd.setHours(
-      23,
-      59,
-      59,
-      999
-    );
-  } else {
-    const latestFeedback =
-      await prisma.feedback.findFirst({
-        where: {
-          workspaceId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
-          createdAt: true,
-        },
-      });
-
-    const latestDate =
-      latestFeedback?.createdAt ??
-      new Date();
-
-    const range =
-      getWeekRange(latestDate);
-
-    periodStart = range.start;
-    periodEnd = range.end;
-  }
-
-  const feedback =
-    await prisma.feedback.findMany({
+  const latestFeedback =
+    await prisma.feedback.findFirst({
       where: {
         workspaceId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        createdAt: true,
+      },
+    });
+
+  if (!latestFeedback) {
+    throw new Error(
+      "No feedback available for this workspace."
+    );
+  }
+
+  const periodEnd =
+    endDate ??
+    latestFeedback.createdAt;
+
+  const periodStart =
+    startDate ??
+    new Date(
+      periodEnd.getTime() -
+        6 * 24 * 60 * 60 * 1000
+    );
+
+  /*
+   * Use an exclusive upper bound.
+   * This makes the entire end date inclusive.
+   */
+
+  const periodEndExclusive =
+    new Date(periodEnd);
+
+  periodEndExclusive.setHours(
+    23,
+    59,
+    59,
+    999
+  );
+
+  /*
+   * =========================================================
+   * FEEDBACK
+   * =========================================================
+   */
+
+  const feedback =
+    (await prisma.feedback.findMany({
+      where: {
+        workspaceId,
+
         createdAt: {
           gte: periodStart,
-          lte: periodEnd,
+          lte: periodEndExclusive,
         },
       },
+
       select: {
         id: true,
         content: true,
@@ -346,30 +131,138 @@ export async function generateVoiceOfCustomerReport(
         source: true,
         createdAt: true,
       },
+
       orderBy: {
         createdAt: "desc",
       },
-    });
+    })) as FeedbackRow[];
 
-  const themeRelations =
+  const total = feedback.length;
+
+  if (!total) {
+    throw new Error(
+      `No feedback found between ${formatDate(
+        periodStart
+      )} and ${formatDate(periodEnd)}.`
+    );
+  }
+
+  /*
+   * =========================================================
+   * SENTIMENT
+   * =========================================================
+   */
+
+  const positive = feedback.filter(
+    (item) =>
+      item.sentiment === "POSITIVE"
+  ).length;
+
+  const neutral = feedback.filter(
+    (item) =>
+      item.sentiment === "NEUTRAL"
+  ).length;
+
+  const negative = feedback.filter(
+    (item) =>
+      item.sentiment === "NEGATIVE"
+  ).length;
+
+  /*
+   * =========================================================
+   * RATING
+   * =========================================================
+   */
+
+  const ratings = feedback
+    .map((item) => item.rating)
+    .filter(
+      (value): value is number =>
+        typeof value === "number"
+    );
+
+  const averageRating =
+    ratings.length > 0
+      ? ratings.reduce(
+          (sum, value) =>
+            sum + value,
+          0
+        ) / ratings.length
+      : null;
+
+  /*
+   * =========================================================
+   * SOURCES
+   * =========================================================
+   */
+
+  const sourceMap =
+    new Map<string, number>();
+
+  for (const item of feedback) {
+    const source =
+      item.source ?? "OTHER";
+
+    sourceMap.set(
+      source,
+      (sourceMap.get(source) ?? 0) + 1
+    );
+  }
+
+  const sources =
+    Array.from(sourceMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+  /*
+   * =========================================================
+   * CATEGORIES
+   * =========================================================
+   */
+
+  const categoryMap =
+    new Map<string, number>();
+
+  for (const item of feedback) {
+    if (!item.category) continue;
+
+    categoryMap.set(
+      item.category,
+      (categoryMap.get(item.category) ?? 0) + 1
+    );
+  }
+
+  const categories =
+    Array.from(categoryMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+  /*
+   * =========================================================
+   * THEMES
+   * =========================================================
+   */
+
+  const relations =
     await prisma.feedbackTheme.findMany({
       where: {
         feedback: {
           workspaceId,
+
           createdAt: {
             gte: periodStart,
-            lte: periodEnd,
+            lte: periodEndExclusive,
           },
         },
       },
+
       select: {
-        feedbackId: true,
         theme: {
           select: {
-            id: true,
             name: true,
           },
         },
+
         feedback: {
           select: {
             sentiment: true,
@@ -380,78 +273,493 @@ export async function generateVoiceOfCustomerReport(
     });
 
   const themeMap =
-    new Map<string, ReportTheme>();
+    new Map<string, ThemeStat>();
 
-  for (const relation of themeRelations) {
-    const themeName =
+  for (const relation of relations) {
+    const name =
       relation.theme.name;
 
-    const existing =
-      themeMap.get(themeName) ?? {
-        name: themeName,
-        count: 0,
-        negative: 0,
+    const current =
+      themeMap.get(name) ?? {
+        name,
+        total: 0,
         positive: 0,
-        averageSentiment: 0,
+        negative: 0,
+        neutral: 0,
       };
 
-    existing.count++;
+    current.total += 1;
 
     if (
-      relation.feedback
-        .sentiment === "NEGATIVE"
+      relation.feedback.sentiment ===
+      "POSITIVE"
     ) {
-      existing.negative++;
+      current.positive += 1;
     }
 
     if (
-      relation.feedback
-        .sentiment === "POSITIVE"
+      relation.feedback.sentiment ===
+      "NEGATIVE"
     ) {
-      existing.positive++;
+      current.negative += 1;
     }
 
-    const score =
-      relation.feedback
-        .sentimentScore ?? 0;
+    if (
+      relation.feedback.sentiment ===
+      "NEUTRAL"
+    ) {
+      current.neutral += 1;
+    }
 
-    existing.averageSentiment +=
-      score;
-
-    themeMap.set(
-      themeName,
-      existing
-    );
+    themeMap.set(name, current);
   }
 
   const themes =
-    Array.from(
-      themeMap.values()
-    ).map((theme) => ({
-      ...theme,
-      averageSentiment:
-        theme.count > 0
-          ? theme.averageSentiment /
-            theme.count
-          : 0,
-    }));
+    Array.from(themeMap.values());
 
-  const title = `Weekly Customer Insights — ${formatDate(
-    periodStart
-  )} - ${formatDate(periodEnd)}`;
+  const topThemes =
+    [...themes]
+      .sort(
+        (a, b) =>
+          b.total - a.total
+      )
+      .slice(0, 5);
 
-  const content =
-    buildReportContent(
-      feedback,
-      themes,
-      periodStart,
-      periodEnd
+  const negativeThemes =
+    [...themes]
+      .filter(
+        (theme) =>
+          theme.negative > 0
+      )
+      .sort((a, b) => {
+        if (
+          b.negative !==
+          a.negative
+        ) {
+          return (
+            b.negative -
+            a.negative
+          );
+        }
+
+        return (
+          b.total -
+          a.total
+        );
+      })
+      .slice(0, 3);
+
+  const positiveThemes =
+    [...themes]
+      .filter(
+        (theme) =>
+          theme.positive > 0
+      )
+      .sort((a, b) => {
+        if (
+          b.positive !==
+          a.positive
+        ) {
+          return (
+            b.positive -
+            a.positive
+          );
+        }
+
+        return (
+          b.total -
+          a.total
+        );
+      })
+      .slice(0, 3);
+
+  /*
+   * =========================================================
+   * PREVIOUS PERIOD
+   * =========================================================
+   */
+
+  const periodLength =
+    periodEnd.getTime() -
+    periodStart.getTime();
+
+  const previousEnd =
+    new Date(
+      periodStart.getTime() - 1
     );
 
+  const previousStart =
+    new Date(
+      previousEnd.getTime() -
+        periodLength
+    );
+
+  const previousFeedback =
+    await prisma.feedback.count({
+      where: {
+        workspaceId,
+
+        createdAt: {
+          gte: previousStart,
+          lte: previousEnd,
+        },
+      },
+    });
+
+  const volumeChange =
+    previousFeedback > 0
+      ? Math.round(
+          ((total -
+            previousFeedback) /
+            previousFeedback) *
+            100
+        )
+      : 0;
+
+  /*
+   * =========================================================
+   * FINDINGS
+   * =========================================================
+   */
+
+  const findings: string[] = [];
+
+  findings.push(
+    `${positive} of ${total} feedback items are positive (${percent(
+      positive,
+      total
+    )}%).`
+  );
+
+  findings.push(
+    `${negative} of ${total} feedback items are negative (${percent(
+      negative,
+      total
+    )}%).`
+  );
+
+  if (negativeThemes[0]) {
+    findings.push(
+      `${negativeThemes[0].name} has the highest negative feedback volume with ${negativeThemes[0].negative} items.`
+    );
+  }
+
+  if (positiveThemes[0]) {
+    findings.push(
+      `${positiveThemes[0].name} has the highest positive feedback volume with ${positiveThemes[0].positive} items.`
+    );
+  }
+
+  if (volumeChange !== 0) {
+    findings.push(
+      `Feedback volume changed by ${
+        volumeChange > 0
+          ? "+"
+          : ""
+      }${volumeChange}% versus the previous period.`
+    );
+  }
+
+  /*
+   * =========================================================
+   * ACTIONS
+   * =========================================================
+   */
+
+  const actions: string[] = [];
+
+  for (
+    const theme of negativeThemes.slice(
+      0,
+      2
+    )
+  ) {
+    actions.push(
+      `Investigate ${theme.name} based on ${theme.negative} negative feedback items.`
+    );
+  }
+
+  if (positiveThemes[0]) {
+    actions.push(
+      `Continue monitoring ${positiveThemes[0].name}, which generated ${positiveThemes[0].positive} positive feedback items.`
+    );
+  }
+
+  /*
+   * =========================================================
+   * CUSTOMER EVIDENCE
+   * =========================================================
+   */
+
+  const negativeQuotes =
+    feedback
+      .filter(
+        (item) =>
+          item.sentiment ===
+          "NEGATIVE"
+      )
+      .sort(
+        (a, b) =>
+          (a.sentimentScore ?? -1) -
+          (b.sentimentScore ?? -1)
+      )
+      .slice(0, 2);
+
+  const positiveQuotes =
+    feedback
+      .filter(
+        (item) =>
+          item.sentiment ===
+          "POSITIVE"
+      )
+      .sort(
+        (a, b) =>
+          (b.sentimentScore ?? 1) -
+          (a.sentimentScore ?? 1)
+      )
+      .slice(0, 2);
+
+  /*
+   * =========================================================
+   * CONTENT
+   * =========================================================
+   *
+   * This content is human-readable.
+   * The PDF does NOT parse this content.
+   * PDF calculates directly from Prisma.
+   */
+
+  const lines: string[] = [];
+
+  lines.push(
+    "LOOP CUSTOMER INTELLIGENCE"
+  );
+
+  lines.push(
+    "VOICE OF CUSTOMER"
+  );
+
+  lines.push(
+    `PERIOD: ${formatDate(
+      periodStart
+    )} - ${formatDate(periodEnd)}`
+  );
+
+  lines.push("");
+
+  lines.push(
+    "ANALYSIS OVERVIEW"
+  );
+
+  lines.push(
+    `Total feedback: ${total}`
+  );
+
+  lines.push(
+    `Positive feedback: ${positive} (${percent(
+      positive,
+      total
+    )}%)`
+  );
+
+  lines.push(
+    `Neutral feedback: ${neutral} (${percent(
+      neutral,
+      total
+    )}%)`
+  );
+
+  lines.push(
+    `Negative feedback: ${negative} (${percent(
+      negative,
+      total
+    )}%)`
+  );
+
+  lines.push(
+    `Average rating: ${
+      averageRating !== null
+        ? averageRating.toFixed(1)
+        : "N/A"
+    }`
+  );
+
+  lines.push(
+    `Feedback volume vs previous period: ${
+      volumeChange >= 0
+        ? "+"
+        : ""
+    }${volumeChange}%`
+  );
+
+  lines.push("");
+
+  lines.push(
+    "SENTIMENT DISTRIBUTION"
+  );
+
+  lines.push(
+    `Positive: ${positive} (${percent(
+      positive,
+      total
+    )}%)`
+  );
+
+  lines.push(
+    `Neutral: ${neutral} (${percent(
+      neutral,
+      total
+    )}%)`
+  );
+
+  lines.push(
+    `Negative: ${negative} (${percent(
+      negative,
+      total
+    )}%)`
+  );
+
+  lines.push("");
+
+  lines.push(
+    "TOP THEMES"
+  );
+
+  for (const theme of topThemes) {
+    lines.push(
+      `${clean(theme.name)} - ${theme.total} mentions`
+    );
+  }
+
+  lines.push("");
+
+  lines.push(
+    "NEGATIVE THEMES"
+  );
+
+  for (const theme of negativeThemes) {
+    lines.push(
+      `${clean(theme.name)} - ${theme.negative} negative of ${theme.total} total`
+    );
+  }
+
+  lines.push("");
+
+  lines.push(
+    "POSITIVE THEMES"
+  );
+
+  for (const theme of positiveThemes) {
+    lines.push(
+      `${clean(theme.name)} - ${theme.positive} positive of ${theme.total} total`
+    );
+  }
+
+  lines.push("");
+
+  lines.push(
+    "KEY FINDINGS"
+  );
+
+  for (const item of findings) {
+    lines.push(
+      clean(item)
+    );
+  }
+
+  lines.push("");
+
+  lines.push(
+    "RECOMMENDED ACTIONS"
+  );
+
+  actions.forEach(
+    (action, index) => {
+      lines.push(
+        `${index + 1}. ${clean(action)}`
+      );
+    }
+  );
+
+  lines.push("");
+
+  lines.push(
+    "SOURCE DISTRIBUTION"
+  );
+
+  for (
+    const [source, count] of sources
+  ) {
+    lines.push(
+      `${clean(source)} - ${count} (${percent(
+        count,
+        total
+      )}%)`
+    );
+  }
+
+  lines.push("");
+
+  lines.push(
+    "CATEGORY DISTRIBUTION"
+  );
+
+  for (
+    const [category, count] of categories
+  ) {
+    lines.push(
+      `${clean(category)} - ${count} (${percent(
+        count,
+        total
+      )}%)`
+    );
+  }
+
+  lines.push("");
+
+  lines.push(
+    "CUSTOMER EVIDENCE"
+  );
+
+  for (
+    const item of negativeQuotes
+  ) {
+    lines.push(
+      `Negative: "${clean(
+        item.content
+      )}"`
+    );
+  }
+
+  for (
+    const item of positiveQuotes
+  ) {
+    lines.push(
+      `Positive: "${clean(
+        item.content
+      )}"`
+    );
+  }
+
+  lines.push("");
+
+  lines.push(
+    "METHODOLOGY"
+  );
+
+  lines.push(
+    `Analysis covers ${total} feedback items from the authenticated workspace during the selected reporting period. Sentiment, themes, ratings, sources and categories are calculated from stored feedback data.`
+  );
+
   return {
-    title,
+    title: `Weekly Customer Insights - ${formatDate(
+      periodStart
+    )} - ${formatDate(periodEnd)}`,
+
+    content: lines.join("\n"),
+
     periodStart,
+
     periodEnd,
-    content,
   };
 }

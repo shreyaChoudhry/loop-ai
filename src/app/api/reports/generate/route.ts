@@ -1,22 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { z } from "zod";
 
 import { authOptions } from "@/auth";
 import prisma from "@/lib/prisma";
 import {
   generateVoiceOfCustomerReport,
 } from "@/lib/report";
-
-const reportSchema = z.object({
-  startDate: z
-    .string()
-    .optional(),
-
-  endDate: z
-    .string()
-    .optional(),
-});
 
 export async function POST(
   request: Request
@@ -30,13 +19,18 @@ export async function POST(
     if (!session?.user?.id) {
       return NextResponse.json(
         {
-          error: "Unauthorized",
+          error:
+            "Unauthorized",
         },
         {
           status: 401,
         }
       );
     }
+
+    /*
+     * Only ADMIN and ANALYST can generate reports.
+     */
 
     if (
       session.user.role !==
@@ -55,7 +49,10 @@ export async function POST(
       );
     }
 
-    let body: unknown = {};
+    let body: {
+      startDate?: string;
+      endDate?: string;
+    } = {};
 
     try {
       body = await request.json();
@@ -63,14 +60,26 @@ export async function POST(
       body = {};
     }
 
-    const validation =
-      reportSchema.safeParse(body);
+    const startDate =
+      body.startDate
+        ? new Date(body.startDate)
+        : undefined;
 
-    if (!validation.success) {
+    const endDate =
+      body.endDate
+        ? new Date(body.endDate)
+        : undefined;
+
+    if (
+      startDate &&
+      Number.isNaN(
+        startDate.getTime()
+      )
+    ) {
       return NextResponse.json(
         {
           error:
-            "Invalid report dates.",
+            "Invalid start date.",
         },
         {
           status: 400,
@@ -78,74 +87,87 @@ export async function POST(
       );
     }
 
-    let startDate: Date | undefined;
-    let endDate: Date | undefined;
-
     if (
-      validation.data.startDate &&
-      validation.data.endDate
+      endDate &&
+      Number.isNaN(
+        endDate.getTime()
+      )
     ) {
-      startDate = new Date(
-        validation.data.startDate
+      return NextResponse.json(
+        {
+          error:
+            "Invalid end date.",
+        },
+        {
+          status: 400,
+        }
       );
-
-      endDate = new Date(
-        validation.data.endDate
-      );
-
-      if (
-        Number.isNaN(
-          startDate.getTime()
-        ) ||
-        Number.isNaN(
-          endDate.getTime()
-        )
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              "Invalid report dates.",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
-
-      if (startDate > endDate) {
-        return NextResponse.json(
-          {
-            error:
-              "Start date must be before end date.",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
     }
 
-    const report =
+    if (
+      startDate &&
+      endDate &&
+      startDate > endDate
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Start date cannot be after end date.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /*
+     * Generate from REAL workspace data.
+     */
+
+    const generated =
       await generateVoiceOfCustomerReport(
         session.user.workspaceId,
         startDate,
         endDate
       );
 
-    const savedReport =
+    /*
+     * Save exact reporting period.
+     */
+
+    const report =
       await prisma.report.create({
         data: {
-          title: report.title,
-          content: report.content,
+          title:
+            generated.title,
+
+          content:
+            generated.content,
+
+          periodStart:
+            generated.periodStart,
+
+          periodEnd:
+            generated.periodEnd,
+
           workspaceId:
             session.user.workspaceId,
+        },
+
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          createdAt: true,
+          periodStart: true,
+          periodEnd: true,
         },
       });
 
     return NextResponse.json(
       {
         success: true,
-        report: savedReport,
+        report,
       },
       {
         status: 201,
@@ -160,7 +182,9 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Failed to generate report.",
+          error instanceof Error
+            ? error.message
+            : "Failed to generate report.",
       },
       {
         status: 500,

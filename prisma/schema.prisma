@@ -103,20 +103,24 @@ model FeedbackTheme {
   @@id([feedbackId, themeId])
   @@index([themeId])
 }
-
 model Report {
   id          String    @id @default(cuid())
   title       String
   content     String
   createdAt   DateTime  @default(now())
+
+  periodStart DateTime?
+  periodEnd   DateTime?
+
   workspaceId String
 
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
   @@index([createdAt])
+  @@index([periodStart])
+  @@index([periodEnd])
 }
-
 model Embedding {
   id         String   @id @default(cuid())
   content    String
