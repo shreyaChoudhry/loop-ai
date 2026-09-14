@@ -27,7 +27,7 @@ const navItems = [
   },
   {
     name: "Ask LOOP",
-    href: "/dashboard/ask-loop",
+    href: "/dashboard/ask",
     roles: ["ADMIN", "ANALYST"],
   },
   {
