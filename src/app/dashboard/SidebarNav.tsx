@@ -42,7 +42,7 @@ const navItems = [
   },
   {
     name: "Settings",
-    href: "/settings/users",
+    href: "/dashboard/settings",
     roles: ["ADMIN"],
   },
 ];
@@ -63,8 +63,7 @@ export default function SidebarNav({ role }: SidebarNavProps) {
       {visibleItems.map((item) => {
         const isActive =
           pathname === item.href ||
-          (item.href !== "/dashboard" &&
-            pathname.startsWith(item.href));
+          (item.href !== "/dashboard" && pathname.startsWith(item.href));
 
         return (
           <Link

@@ -29,15 +29,7 @@ export default async function SettingsPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        {/* Header */}
         <div className="mb-8">
-          <Link
-            href="/dashboard"
-            className="mb-4 inline-flex items-center text-sm text-slate-500 hover:text-slate-900"
-          >
-            ← Back to Dashboard
-          </Link>
-
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Settings
           </h1>
@@ -48,19 +40,16 @@ export default async function SettingsPage() {
         </div>
 
         <div className="space-y-6">
-          {/* Workspace */}
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Workspace
-              </h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Workspace
+            </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Basic information about your LOOP workspace.
-              </p>
-            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Basic information about your LOOP workspace.
+            </p>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
                 <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Workspace Name
@@ -83,19 +72,16 @@ export default async function SettingsPage() {
             </div>
           </section>
 
-          {/* Account */}
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Account
-              </h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Account
+            </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Information about your current LOOP account.
-              </p>
-            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Information about your current LOOP account.
+            </p>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
                 <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Name
@@ -128,19 +114,16 @@ export default async function SettingsPage() {
             </div>
           </section>
 
-          {/* Appearance */}
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Appearance
-              </h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Appearance
+            </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Customize how LOOP looks for you.
-              </p>
-            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Customize how LOOP looks for you.
+            </p>
 
-            <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+            <div className="mt-5 flex items-center justify-between rounded-lg border border-slate-200 p-4">
               <div>
                 <p className="text-sm font-medium text-slate-900">
                   Interface theme
@@ -157,19 +140,16 @@ export default async function SettingsPage() {
             </div>
           </section>
 
-          {/* Notifications */}
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Notifications
-              </h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Notifications
+            </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Manage future notification preferences.
-              </p>
-            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Manage notification preferences.
+            </p>
 
-            <div className="space-y-4">
+            <div className="mt-5 space-y-4">
               <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
                 <div>
                   <p className="text-sm font-medium text-slate-900">
@@ -181,7 +161,7 @@ export default async function SettingsPage() {
                   </p>
                 </div>
 
-                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
+                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-500">
                   Coming soon
                 </span>
               </div>
@@ -197,26 +177,23 @@ export default async function SettingsPage() {
                   </p>
                 </div>
 
-                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
+                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-500">
                   Coming soon
                 </span>
               </div>
             </div>
           </section>
 
-          {/* Integrations */}
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Integrations
-              </h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Integrations
+            </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                External data sources connected to LOOP.
-              </p>
-            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              External data sources connected to LOOP.
+            </p>
 
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+            <div className="mt-5 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
               <p className="text-sm font-medium text-slate-700">
                 No external integrations connected
               </p>
@@ -227,7 +204,6 @@ export default async function SettingsPage() {
             </div>
           </section>
 
-          {/* Members */}
           {session.user.role === "ADMIN" && (
             <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -242,8 +218,8 @@ export default async function SettingsPage() {
                 </div>
 
                 <Link
-                  href="/settings/users"
-                  className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+                  href="/dashboard/settings/users"
+                  className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
                 >
                   Manage Members
                 </Link>
