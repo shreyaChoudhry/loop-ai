@@ -38,9 +38,7 @@ function createMockAnswer(
         Boolean(category)
     );
 
-  const uniqueCategories = [
-    ...new Set(categories),
-  ];
+  const uniqueCategories = Array.from(new Set(categories));
 
   const strongest =
     citations[0];
