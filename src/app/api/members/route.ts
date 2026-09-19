@@ -19,12 +19,15 @@ export async function POST(request: Request) {
 
     if (!session?.user) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
+        {
+          success: false,
+          error: "Unauthorized",
+        },
         { status: 401 }
       );
     }
 
-    // Only ADMIN can create members
+    // Only ADMIN can add members
     if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         {
@@ -53,10 +56,13 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Email is globally unique in our database
+    // Email only needs to be unique inside this workspace
     const existingUser = await prisma.user.findUnique({
       where: {
-        email: normalizedEmail,
+        workspaceId_email: {
+          workspaceId: session.user.workspaceId,
+          email: normalizedEmail,
+        },
       },
     });
 
@@ -64,7 +70,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "An account with this email already exists.",
+          error: "A member with this email already exists in this workspace.",
         },
         { status: 409 }
       );
