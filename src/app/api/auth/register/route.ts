@@ -6,6 +6,9 @@ import prisma from "@/lib/prisma";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
+  workspaceName: z
+    .string()
+    .min(2, "Company / Workspace name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
@@ -14,23 +17,27 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const result = registerSchema.safeParse(body);
+    const parseResult = registerSchema.safeParse(body);
 
-    if (!result.success) {
+    if (!parseResult.success) {
       return NextResponse.json(
         {
           success: false,
-          error: result.error.issues[0].message,
+          error: parseResult.error.issues[0].message,
         },
         { status: 400 }
       );
     }
 
-    const { name, email, password } = result.data;
+    const { name, workspaceName, email, password } = parseResult.data;
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedWorkspaceName = workspaceName.trim();
+
+    // Check if email already exists
     const existingUser = await prisma.user.findUnique({
       where: {
-        email,
+        email: normalizedEmail,
       },
     });
 
@@ -38,44 +45,51 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "User already exists",
+          error: "An account with this email already exists.",
         },
         { status: 409 }
       );
     }
 
-    const workspace = await prisma.workspace.findFirst();
-
-    if (!workspace) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "No workspace found",
-        },
-        { status: 500 }
-      );
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        workspaceId: workspace.id,
-      },
+    // Create workspace + first ADMIN user together
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      const workspace = await tx.workspace.create({
+        data: {
+          name: normalizedWorkspaceName,
+        },
+      });
+
+      const user = await tx.user.create({
+        data: {
+          name: name.trim(),
+          email: normalizedEmail,
+          password: hashedPassword,
+          role: "ADMIN",
+          workspaceId: workspace.id,
+        },
+      });
+
+      return {
+        workspace,
+        user,
+      };
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: "User registered successfully",
+        message: "Workspace and admin account created successfully.",
+        workspace: {
+          id: transactionResult.workspace.id,
+          name: transactionResult.workspace.name,
+        },
         user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
+          id: transactionResult.user.id,
+          name: transactionResult.user.name,
+          email: transactionResult.user.email,
+          role: transactionResult.user.role,
         },
       },
       { status: 201 }
@@ -86,7 +100,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: "Something went wrong",
+        error: "Something went wrong while creating your workspace.",
       },
       { status: 500 }
     );

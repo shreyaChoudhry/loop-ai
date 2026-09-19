@@ -8,6 +8,7 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
+  const [workspaceName, setWorkspaceName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -28,6 +29,7 @@ export default function RegisterPage() {
         },
         body: JSON.stringify({
           name,
+          workspaceName,
           email,
           password,
         }),
@@ -126,14 +128,14 @@ export default function RegisterPage() {
           </div>
 
           <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-100">
-            <h2 className="text-2xl font-bold">Create your account</h2>
+            <h2 className="text-2xl font-bold">Create your workspace</h2>
 
             <p className="mt-2 text-sm text-gray-500">
-              Start turning customer feedback into decisions.
+              Create your company workspace and start using LOOP.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8">
-              {/* NAME */}
+              {/* FULL NAME */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Full name
@@ -147,6 +149,27 @@ export default function RegisterPage() {
                   required
                   className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6655e8] focus:ring-2 focus:ring-purple-100"
                 />
+              </div>
+
+              {/* WORKSPACE NAME */}
+              <div className="mt-5">
+                <label className="mb-2 block text-sm font-medium">
+                  Company / Workspace name
+                </label>
+
+                <input
+                  type="text"
+                  value={workspaceName}
+                  onChange={(e) => setWorkspaceName(e.target.value)}
+                  placeholder="Acme Inc."
+                  required
+                  minLength={2}
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6655e8] focus:ring-2 focus:ring-purple-100"
+                />
+
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Your company will get its own isolated LOOP workspace.
+                </p>
               </div>
 
               {/* EMAIL */}
@@ -188,7 +211,7 @@ export default function RegisterPage() {
                 disabled={loading}
                 className="mt-6 w-full rounded-lg bg-[#6655e8] py-3.5 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition hover:bg-[#5847d8] disabled:opacity-60"
               >
-                {loading ? "Creating account..." : "Create account"}
+                {loading ? "Creating workspace..." : "Create workspace"}
               </button>
 
               {/* ERROR */}
