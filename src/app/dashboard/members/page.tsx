@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { authOptions } from "@/auth";
 import prisma from "@/lib/prisma";
-
+import InviteMemberButton from "./InviteMemberButton";
 function roleStyles(role: string) {
   switch (role) {
     case "ADMIN":
@@ -102,10 +102,14 @@ export default async function MembersPage() {
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm">
-            {members.length}{" "}
-            {members.length === 1 ? "member" : "members"}
-          </div>
+          <div className="flex items-center gap-3">
+  <div className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm">
+    {members.length}{" "}
+    {members.length === 1 ? "member" : "members"}
+  </div>
+
+  <InviteMemberButton />
+</div>
         </div>
       </div>
 
