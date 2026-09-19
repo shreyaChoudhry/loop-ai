@@ -10,7 +10,7 @@ const memberSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["ANALYST", "VIEWER"]),
+  role: z.enum(["ADMIN", "ANALYST", "VIEWER"]),
 });
 
 export async function POST(request: Request) {
@@ -56,13 +56,11 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Email only needs to be unique inside this workspace
+    // Email is globally unique in our database.
+    // So check the email directly.
     const existingUser = await prisma.user.findUnique({
       where: {
-        workspaceId_email: {
-          workspaceId: session.user.workspaceId,
-          email: normalizedEmail,
-        },
+        email: normalizedEmail,
       },
     });
 
@@ -70,7 +68,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "A member with this email already exists in this workspace.",
+          error: "A member with this email already exists.",
         },
         { status: 409 }
       );
@@ -86,18 +84,20 @@ export async function POST(request: Request) {
         role,
         workspaceId: session.user.workspaceId,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        workspaceId: true,
+      },
     });
 
     return NextResponse.json(
       {
         success: true,
         message: "Member added successfully.",
-        member: {
-          id: member.id,
-          name: member.name,
-          email: member.email,
-          role: member.role,
-        },
+        member,
       },
       { status: 201 }
     );
