@@ -47,7 +47,7 @@ export default function IntegrationsSettingsPage() {
         setApiKey(data.settings.apiKey);
         setRevealed(true);
       }
-    } catch (e) {
+    } catch {
       alert("Failed to generate API key");
     } finally {
       setRegenerating(false);
@@ -186,7 +186,7 @@ export default function IntegrationsSettingsPage() {
         <div className="rounded-lg bg-gray-50 border p-4 text-xs text-gray-600 space-y-2">
           <p className="font-bold text-gray-800">Supported Payload Fields:</p>
           <ul className="list-disc pl-5 space-y-1">
-            <li><code className="text-violet-600 font-semibold">content</code> (required): The customer's feedback message</li>
+            <li><code className="text-violet-600 font-semibold">content</code> (required): The customer&apos;s feedback message</li>
             <li><code className="text-violet-600 font-semibold">source</code> (optional): WEBSITE, EMAIL, SUPPORT, SURVEY, OTHER</li>
             <li><code className="text-violet-600 font-semibold">rating</code> (optional): Integer from 1 to 5</li>
             <li><code className="text-violet-600 font-semibold">category</code> (optional): Product feature area</li>

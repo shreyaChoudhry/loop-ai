@@ -42,8 +42,18 @@ export function generateUnsubscribeToken(email: string): string {
  * Verify an unsubscribe token
  */
 export function verifyUnsubscribeToken(email: string, token: string): boolean {
-  const expected = generateUnsubscribeToken(email);
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+  if (!token || typeof token !== "string") return false;
+  try {
+    const expected = generateUnsubscribeToken(email);
+    const bufExpected = Buffer.from(expected);
+    const bufToken = Buffer.from(token);
+    if (bufExpected.length !== bufToken.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(bufExpected, bufToken);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -105,7 +115,7 @@ export async function sendEmail({
 export async function notifySubscribersForRequest(
   requestId: string,
   newStatus: "UNDER_REVIEW" | "PLANNED" | "IN_PROGRESS" | "SHIPPED" | "NOT_PLANNED",
-  _oldStatus?: string | null
+  oldStatus?: string | null
 ): Promise<EmailDeliveryResult> {
   const request = await prisma.request.findUnique({
     where: { id: requestId },
@@ -213,7 +223,7 @@ export async function notifySubscribersForRequest(
         </p>
         <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
           <h3 style="margin: 0 0 8px 0; font-size: 17px; color: #111827;">${request.title}</h3>
-          <p style="margin: 0; font-size: 14px; color: #4b5563;">Status changed to: <strong style="color: #6655e8;">${formattedStatus}</strong></p>
+          <p style="margin: 0; font-size: 14px; color: #4b5563;">Status changed${oldStatus ? ` from ${formatPublicStatus(oldStatus)}` : ""} to: <strong style="color: #6655e8;">${formattedStatus}</strong></p>
           ${
             request.releaseNote && newStatus === "SHIPPED"
               ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #374151;"><strong>Release note:</strong> ${request.releaseNote}</div>`

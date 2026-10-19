@@ -18,7 +18,7 @@ type PortalSettings = {
 };
 
 export default function PortalSettingsPage() {
-  const [settings, setSettings] = useState<PortalSettings | null>(null);
+  const [, setSettings] = useState<PortalSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -118,7 +118,7 @@ export default function PortalSettingsPage() {
       } else {
         alert(data.error || "Failed to generate digest preview");
       }
-    } catch (e) {
+    } catch {
       alert("Error generating digest preview");
     } finally {
       setTestingDigest(false);
@@ -295,9 +295,9 @@ export default function PortalSettingsPage() {
 
         <div className="flex items-center justify-between border-t pt-4">
           <div>
-            <label className="text-xs font-semibold text-gray-900">Show "Not Planned" Requests</label>
+            <label className="text-xs font-semibold text-gray-900">Show &quot;Not Planned&quot; Requests</label>
             <p className="text-[11px] text-gray-500">
-              When checked, declined ideas are displayed with a "Not Planned" badge on public roadmap.
+              When checked, declined ideas are displayed with a &quot;Not Planned&quot; badge on public roadmap.
             </p>
           </div>
           <input

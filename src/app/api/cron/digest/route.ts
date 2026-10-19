@@ -4,6 +4,8 @@ import { authOptions } from "@/auth";
 import prisma from "@/lib/prisma";
 import { sendEmail, formatPublicStatus } from "@/lib/email";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

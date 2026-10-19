@@ -67,7 +67,7 @@ export default function PublicPortalPage() {
 
   // Live duplicate suggestion
   const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
-  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const [, setCheckingDuplicates] = useState(false);
 
   // Initialize voter token on mount
   useEffect(() => {
@@ -311,6 +311,7 @@ export default function PublicPortalPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-5 sm:px-6">
           <div className="flex items-center gap-3">
             {portal.logoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img src={portal.logoUrl} alt={portal.name} className="h-10 w-10 rounded-lg object-cover" />
             ) : (
               <div
@@ -409,7 +410,7 @@ export default function PublicPortalPage() {
 
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e) => setSortBy(e.target.value as "popular" | "recent")}
                   className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 outline-none"
                 >
                   <option value="popular">Most Upvoted</option>
@@ -524,7 +525,7 @@ export default function PublicPortalPage() {
           <div className="max-w-2xl mx-auto space-y-6">
             {changelogItems.length === 0 ? (
               <div className="rounded-xl border bg-white p-10 text-center text-gray-500">
-                No shipped features recorded yet. Features marked as "Shipped" on the roadmap will appear here.
+                No shipped features recorded yet. Features marked as &quot;Shipped&quot; on the roadmap will appear here.
               </div>
             ) : (
               changelogItems.map((item) => (
@@ -849,7 +850,6 @@ function RoadmapColumn({
 
 function FollowUpWidget({ requestId, slug }: { requestId: string; slug: string }) {
   const [answered, setAnswered] = useState(false);
-  const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   async function sendFeedback(satisfied: boolean) {
@@ -858,7 +858,7 @@ function FollowUpWidget({ requestId, slug }: { requestId: string; slug: string }
       await fetch(`/api/portal/${slug}/requests/${requestId}/follow-up`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ satisfied, comment }),
+        body: JSON.stringify({ satisfied, comment: undefined }),
       });
       setAnswered(true);
     } catch (e) {

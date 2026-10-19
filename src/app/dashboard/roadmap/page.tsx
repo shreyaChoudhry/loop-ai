@@ -93,18 +93,7 @@ export default function DashboardRoadmapPage() {
     try {
       setUpdating(true);
       setNotificationStatus(null);
-      const res = await fetch(`/api/roadmap/requests/${selectedItem.id}`, {
-        method: "POST", // using PATCH via method or fetch with PATCH
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: editStatus,
-          releaseNote: editReleaseNote,
-          effort: editEffort,
-          impact: editImpact,
-        }),
-      });
 
-      // If PATCH is needed:
       const patchRes = await fetch(`/api/roadmap/requests/${selectedItem.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -444,7 +433,7 @@ export default function DashboardRoadmapPage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <h3 className="text-base font-bold text-gray-900">Link Duplicate Request</h3>
             <p className="mt-1 text-xs text-gray-500">
-              Link "{selectedItem.title}" to a primary idea. Votes will be preserved.
+              Link &quot;{selectedItem.title}&quot; to a primary idea. Votes will be preserved.
             </p>
 
             <div className="mt-4">

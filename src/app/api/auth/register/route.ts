@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import crypto from "crypto";
 
 import prisma from "@/lib/prisma";
 
@@ -53,11 +54,32 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate base slug from workspace name
+    const rawSlug = normalizedWorkspaceName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "portal";
+
+    const existingSlug = await prisma.workspace.findUnique({
+      where: { slug: rawSlug },
+      select: { id: true },
+    });
+
+    const initialSlug = existingSlug
+      ? `${rawSlug}-${crypto.randomBytes(3).toString("hex")}`
+      : rawSlug;
+
+    const initialApiKey = `loop_live_${crypto.randomBytes(16).toString("hex")}`;
+
     // Create workspace + first ADMIN user together
     const transactionResult = await prisma.$transaction(async (tx) => {
       const workspace = await tx.workspace.create({
         data: {
           name: normalizedWorkspaceName,
+          slug: initialSlug,
+          portalName: normalizedWorkspaceName,
+          portalEnabled: true,
+          apiKey: initialApiKey,
         },
       });
 

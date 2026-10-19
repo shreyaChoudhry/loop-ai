@@ -100,6 +100,12 @@ export async function GET(
           releaseNote: true,
           createdAt: true,
           updatedAt: true,
+          duplicates: {
+            select: {
+              id: true,
+              voteCount: true,
+            },
+          },
         },
         orderBy,
         skip: (page - 1) * limit,
@@ -107,24 +113,48 @@ export async function GET(
       }),
     ]);
 
-    // Check which requests this voterToken has already voted for
+    // Check which requests (or their merged duplicates) this voterToken has already voted for
     let userVotedIds = new Set<string>();
     if (voterToken) {
+      const allCandidateIds = requestsList.flatMap((r) => [
+        r.id,
+        ...r.duplicates.map((d) => d.id),
+      ]);
+
       const existingVotes = await prisma.vote.findMany({
         where: {
           workspaceId: workspace.id,
           voterToken,
-          requestId: { in: requestsList.map((r) => r.id) },
+          requestId: { in: allCandidateIds },
         },
         select: { requestId: true },
       });
       userVotedIds = new Set(existingVotes.map((v) => v.requestId));
     }
 
-    const formattedRequests = requestsList.map((req) => ({
-      ...req,
-      hasVoted: userVotedIds.has(req.id),
-    }));
+    const formattedRequests = requestsList.map((req) => {
+      const duplicateVotes = req.duplicates.reduce(
+        (sum, d) => sum + d.voteCount,
+        0
+      );
+      const hasVoted =
+        userVotedIds.has(req.id) ||
+        req.duplicates.some((d) => userVotedIds.has(d.id));
+
+      return {
+        id: req.id,
+        title: req.title,
+        description: req.description,
+        category: req.category,
+        status: req.status,
+        voteCount: req.voteCount + duplicateVotes,
+        shippedAt: req.shippedAt,
+        releaseNote: req.releaseNote,
+        createdAt: req.createdAt,
+        updatedAt: req.updatedAt,
+        hasVoted,
+      };
+    });
 
     return NextResponse.json({
       success: true,
