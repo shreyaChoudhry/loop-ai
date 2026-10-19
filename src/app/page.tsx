@@ -36,12 +36,40 @@ export default function HomePage() {
 
           {/* Navigation Links */}
           <div className="hidden items-center gap-8 text-sm font-medium text-gray-300 lg:flex">
-            <a href="#features" className="transition hover:text-white">Product</a>
-            <a href="#workflow" className="transition hover:text-white">Solutions</a>
-            <a href="#preview" className="transition hover:text-white">Features</a>
-            <a href="#pricing" className="transition hover:text-white">Pricing</a>
-            <a href="#resources" className="transition hover:text-white">Resources</a>
-            <Link href="/portal/acme-demo" className="transition hover:text-white text-purple-300">
+            <a
+              href="#features"
+              className="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded-md px-1"
+            >
+              Product
+            </a>
+            <a
+              href="#workflow"
+              className="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded-md px-1"
+            >
+              Solutions
+            </a>
+            <a
+              href="#preview"
+              className="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded-md px-1"
+            >
+              Features
+            </a>
+            <a
+              href="#pricing"
+              className="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded-md px-1"
+            >
+              Pricing
+            </a>
+            <a
+              href="#resources"
+              className="transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded-md px-1"
+            >
+              Resources
+            </a>
+            <Link
+              href="/portal/loop-demo/changelog"
+              className="transition hover:text-white text-purple-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded-md px-1"
+            >
               Changelog
             </Link>
           </div>
@@ -140,7 +168,8 @@ export default function HomePage() {
       </section>
 
       {/* INTERACTIVE DASHBOARD PREVIEW (EXACT GOOGLE STITCH MOCKUP) */}
-      <section id="preview" className="relative z-20 pb-28 px-4 sm:px-8">
+      <section id="preview" className="relative z-20 pb-28 px-4 sm:px-8 scroll-mt-24">
+        <div id="features" className="scroll-mt-24" />
         <div className="mx-auto max-w-6xl">
           <div className="relative rounded-3xl border border-purple-500/20 bg-[#0B1026]/90 p-3 sm:p-5 shadow-2xl backdrop-blur-2xl shadow-purple-950/50">
             {/* Window Topbar */}
@@ -380,7 +409,7 @@ export default function HomePage() {
       </section>
 
       {/* CORE WORKFLOW PILLARS */}
-      <section id="workflow" className="relative z-20 border-t border-white/5 bg-[#060919] py-24 px-6 sm:px-8">
+      <section id="workflow" className="relative z-20 border-t border-white/5 bg-[#060919] py-24 px-6 sm:px-8 scroll-mt-24">
         <div className="mx-auto max-w-7xl">
           <div className="text-center max-w-2xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-widest text-purple-400">
@@ -435,9 +464,362 @@ export default function HomePage() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* CTA BANNER */}
-          <div className="mt-20 relative overflow-hidden rounded-3xl border border-purple-500/30 bg-gradient-to-r from-[#0E1438] via-[#1A1040] to-[#2B0E4E] p-10 sm:p-14 text-center shadow-2xl">
+      {/* PRICING SECTION */}
+      <section id="pricing" className="relative z-20 border-t border-white/5 bg-[#070814] py-24 px-6 sm:px-8 scroll-mt-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-purple-400">
+              Pricing &amp; Plans
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              Transparent, predictable plans for every stage.
+            </h2>
+            <p className="mt-4 text-sm sm:text-base text-slate-400 leading-relaxed">
+              Experience the full power of LOOP AI intelligence with our 14-day free trial. All core capabilities are unlocked during beta.
+            </p>
+          </div>
+
+          {/* Honest Coming Soon Notice */}
+          <div className="mt-8 max-w-3xl mx-auto rounded-2xl border border-purple-500/30 bg-purple-950/20 p-4 backdrop-blur-md text-center">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-purple-300">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>BETA ACCESS PERIOD</span>
+            </div>
+            <p className="mt-1 text-xs text-slate-300">
+              Public self-serve card billing arrives Q2 2026. Every workspace receives unrestricted access to AI deduplication, custom prioritization scoring, and unlimited portal requests during the 14-day trial.
+            </p>
+          </div>
+
+          {/* Pricing Tiers Grid */}
+          <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
+            {/* Starter Plan */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1026]/70 p-8 backdrop-blur-md flex flex-col justify-between hover:border-purple-500/30 transition">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Starter</span>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-white">$0</span>
+                  <span className="text-xs text-slate-400">/ 14-day trial</span>
+                </div>
+                <p className="mt-3 text-xs text-slate-400 leading-relaxed">
+                  Best for early-stage founders and indie hackers collecting initial user validation.
+                </p>
+                <div className="mt-6 border-t border-white/5 pt-6 space-y-3 text-xs text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> Up to 1,000 feedback signals
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> 1 Public roadmap &amp; voting board
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> AI duplicate detection &amp; clustering
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> Manual CSV uploads &amp; inbox
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> Community &amp; email support
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8">
+                <Link
+                  href="/register"
+                  className="block w-full text-center rounded-xl border border-white/15 bg-white/5 py-3 text-xs font-semibold text-white hover:bg-white/10 transition"
+                >
+                  Start 14-Day Free Trial
+                </Link>
+              </div>
+            </div>
+
+            {/* Growth Plan - Highlighted */}
+            <div className="rounded-2xl border-2 border-purple-500/60 bg-gradient-to-b from-purple-950/40 via-[#0B1026]/90 to-[#0B1026] p-8 backdrop-blur-md flex flex-col justify-between shadow-glow-md relative hover:scale-[1.02] transition duration-200">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-500 px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+                Most Popular
+              </div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-purple-300">Growth</span>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-white">$49</span>
+                  <span className="text-xs text-slate-400">/ month</span>
+                </div>
+                <p className="mt-3 text-xs text-slate-300 leading-relaxed">
+                  For growing product teams building with evidence and closing the feedback loop.
+                </p>
+                <div className="mt-6 border-t border-purple-500/20 pt-6 space-y-3 text-xs text-slate-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-fuchsia-400 font-bold">✓</span> Up to 25,000 feedback signals
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-fuchsia-400 font-bold">✓</span> Custom scoring formula &amp; decay weighting
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-fuchsia-400 font-bold">✓</span> Unlimited team members &amp; roles
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-fuchsia-400 font-bold">✓</span> Weekly Founder Digest emails
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-fuchsia-400 font-bold">✓</span> Customer status notifications
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-fuchsia-400 font-bold">✓</span> Webhooks &amp; REST API ingestion
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8">
+                <Link
+                  href="/register"
+                  className="block w-full text-center rounded-xl bg-gradient-to-r from-[#8B2CFC] via-[#A855F7] to-[#D946EF] py-3 text-xs font-bold text-white shadow-glow-sm hover:shadow-glow-md transition hover:scale-[1.02]"
+                >
+                  Start 14-Day Free Trial
+                </Link>
+                <p className="mt-2 text-center text-[10px] text-slate-400">
+                  No credit card required &bull; Self-serve billing coming Q2 2026
+                </p>
+              </div>
+            </div>
+
+            {/* Enterprise Plan */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1026]/70 p-8 backdrop-blur-md flex flex-col justify-between hover:border-purple-500/30 transition">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Enterprise</span>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-white">Custom</span>
+                </div>
+                <p className="mt-3 text-xs text-slate-400 leading-relaxed">
+                  For scaling organizations requiring multi-workspace isolation, SOC2 compliance, and dedicated SLAs.
+                </p>
+                <div className="mt-6 border-t border-white/5 pt-6 space-y-3 text-xs text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> Unlimited signals &amp; workspaces
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> Dedicated workspace data isolation
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> Two-way Jira &amp; Linear issue sync
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> Custom embeddings &amp; private cloud
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold">✓</span> 99.9% uptime SLA &amp; 24/7 priority support
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8">
+                <Link
+                  href="/register"
+                  className="block w-full text-center rounded-xl border border-purple-500/40 bg-purple-950/30 py-3 text-xs font-semibold text-purple-200 hover:bg-purple-900/40 transition"
+                >
+                  Contact Enterprise Sales
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* RESOURCES & DOCUMENTATION SECTION */}
+      <section id="resources" className="relative z-20 border-t border-white/5 bg-[#060919] py-24 px-6 sm:px-8 scroll-mt-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-purple-400">
+              Resources &amp; Documentation
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              Guides, architecture &amp; product playbooks.
+            </h2>
+            <p className="mt-4 text-sm sm:text-base text-slate-400 leading-relaxed">
+              Explore how LOOP transforms raw customer signals into actionable product outcomes with mathematical rigor.
+            </p>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-white/5 bg-[#0B1026]/70 p-6 backdrop-blur-md hover:border-purple-500/30 transition flex flex-col justify-between">
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-xl border border-purple-500/20">
+                  📐
+                </div>
+                <span className="mt-4 inline-block text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                  Algorithm Specs
+                </span>
+                <h3 className="mt-1 text-base font-bold text-white">Prioritization Formula</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                  Mathematical breakdown of customer upvotes, recency half-life decay, duplicate cluster weight, and effort ratios.
+                </p>
+              </div>
+              <div className="mt-6">
+                <a
+                  href="#workflow"
+                  className="text-xs font-medium text-purple-300 hover:text-white transition inline-flex items-center gap-1"
+                >
+                  <span>Review Formula Engine</span>
+                  <span>→</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-[#0B1026]/70 p-6 backdrop-blur-md hover:border-purple-500/30 transition flex flex-col justify-between">
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-xl border border-purple-500/20">
+                  ⚡
+                </div>
+                <span className="mt-4 inline-block text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                  Developer API
+                </span>
+                <h3 className="mt-1 text-base font-bold text-white">Multi-Channel Ingestion</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                  Connect incoming webhooks, Segment streams, in-app widgets, and CSV uploads directly into LOOP&apos;s real-time AI vector pipeline.
+                </p>
+              </div>
+              <div className="mt-6">
+                <Link
+                  href="/register"
+                  className="text-xs font-medium text-purple-300 hover:text-white transition inline-flex items-center gap-1"
+                >
+                  <span>Explore Ingestion Webhooks</span>
+                  <span>→</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-[#0B1026]/70 p-6 backdrop-blur-md hover:border-purple-500/30 transition flex flex-col justify-between">
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-xl border border-purple-500/20">
+                  🔁
+                </div>
+                <span className="mt-4 inline-block text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                  Product Strategy
+                </span>
+                <h3 className="mt-1 text-base font-bold text-white">The Close-The-Loop Playbook</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                  A proven framework to notify feature request submitters when ideas ship, collect follow-up CSAT, and drive account retention.
+                </p>
+              </div>
+              <div className="mt-6">
+                <Link
+                  href="/portal/loop-demo"
+                  className="text-xs font-medium text-purple-300 hover:text-white transition inline-flex items-center gap-1"
+                >
+                  <span>View Public Portal Example</span>
+                  <span>→</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-[#0B1026]/70 p-6 backdrop-blur-md hover:border-purple-500/30 transition flex flex-col justify-between">
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-xl border border-purple-500/20">
+                  🛡️
+                </div>
+                <span className="mt-4 inline-block text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                  Enterprise Security
+                </span>
+                <h3 className="mt-1 text-base font-bold text-white">Security &amp; Multi-Tenancy</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                  Row-level workspace isolation, CRON HMAC signature checks, unsubscribe token authentication, and data encryption standards.
+                </p>
+              </div>
+              <div className="mt-6">
+                <a
+                  href="#security"
+                  className="text-xs font-medium text-purple-300 hover:text-white transition inline-flex items-center gap-1"
+                >
+                  <span>Read Architecture Specs</span>
+                  <span>→</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CHANGELOG SECTION */}
+      <section id="changelog" className="relative z-20 border-t border-white/5 bg-[#070814] py-24 px-6 sm:px-8 scroll-mt-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-purple-400">
+              Product Releases
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              Continuous innovation, shipped weekly.
+            </h2>
+            <p className="mt-4 text-sm sm:text-base text-slate-400 leading-relaxed">
+              Track our live shipped updates, changelog notes, and upcoming roadmap milestones directly from our customer portal.
+            </p>
+          </div>
+
+          <div className="mt-12 max-w-4xl mx-auto space-y-6">
+            {/* Release v2.4 */}
+            <div className="rounded-2xl border border-purple-500/30 bg-[#0B1026]/80 p-6 backdrop-blur-md shadow-lg">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-400">
+                    v2.4 Shipped 🎉
+                  </span>
+                  <h3 className="text-base font-bold text-white">Autonomous AI Clustering &amp; Jira 2-Way Sync</h3>
+                </div>
+                <span className="text-xs text-slate-400">October 2026</span>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-slate-300">
+                Incoming feedback signals are now automatically clustered using deterministic cosine embeddings. Seamlessly push prioritized requests to Jira issues and receive live status synchronization.
+              </p>
+            </div>
+
+            {/* Release v2.3 */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1026]/70 p-6 backdrop-blur-md">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-purple-500/10 border border-purple-500/30 px-3 py-1 text-xs font-semibold text-purple-300">
+                    v2.3 Shipped
+                  </span>
+                  <h3 className="text-base font-bold text-white">Dynamic Decay Formula &amp; Prioritization Matrix</h3>
+                </div>
+                <span className="text-xs text-slate-400">September 2026</span>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-slate-300">
+                Fine-tune prioritization weighting with adjustable exponential recency decay, effort sliders, and custom revenue-tier modifiers.
+              </p>
+            </div>
+
+            {/* Release v2.2 */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1026]/70 p-6 backdrop-blur-md">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-purple-500/10 border border-purple-500/30 px-3 py-1 text-xs font-semibold text-purple-300">
+                    v2.2 Shipped
+                  </span>
+                  <h3 className="text-base font-bold text-white">Weekly Founder Digest Email Delivery</h3>
+                </div>
+                <span className="text-xs text-slate-400">August 2026</span>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-slate-300">
+                Automated weekly executive digest delivering sentiment trends, top requests, and close-the-loop metrics straight to your Gmail or business inbox.
+              </p>
+            </div>
+
+            {/* Link to live changelog route */}
+            <div className="text-center pt-6">
+              <Link
+                href="/portal/loop-demo/changelog"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#8B2CFC] via-[#A855F7] to-[#D946EF] px-8 py-3.5 text-sm font-bold text-white shadow-glow-md hover:shadow-glow-lg transition-all duration-200 hover:scale-[1.02]"
+              >
+                <span>Open Live Customer Portal Changelog</span>
+                <span>↗</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CALL TO ACTION BANNER */}
+      <section className="relative z-20 border-t border-white/5 bg-[#060919] py-20 px-6 sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="relative overflow-hidden rounded-3xl border border-purple-500/30 bg-gradient-to-r from-[#0E1438] via-[#1A1040] to-[#2B0E4E] p-10 sm:p-14 text-center shadow-2xl">
             <h3 className="text-3xl font-extrabold sm:text-4xl text-white">
               Ready to build what customers actually want?
             </h3>
