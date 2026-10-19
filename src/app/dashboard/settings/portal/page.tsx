@@ -109,17 +109,20 @@ export default function PortalSettingsPage() {
   async function handleTestDigest() {
     try {
       setTestingDigest(true);
-      const res = await fetch("/api/cron/digest?preview=true");
+      const res = await fetch("/api/cron/digest?sendTest=true");
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.success && data.sent) {
         alert(
-          `Weekly Digest Preview Generated!\nRecipient: ${data.recipient}\nPeriod: ${data.period}\nTotal Feedback: ${data.stats.totalFeedback}\nTop Requests: ${data.stats.topRequestsCount}`
+          `✓ Real Test Digest Sent!\n\nRecipient: ${data.recipient}\nProvider: ${data.provider}\nPeriod: ${data.period}\nFeedback Count: ${data.stats.totalFeedback}\nTop Requests: ${data.stats.topRequestsCount}\n\nPlease check your inbox and spam folder.`
         );
       } else {
-        alert(data.error || "Failed to generate digest preview");
+        alert(
+          data.error ||
+            "Failed to deliver test digest. Please check your email configuration."
+        );
       }
     } catch {
-      alert("Error generating digest preview");
+      alert("Error sending test digest email. Please try again.");
     } finally {
       setTestingDigest(false);
     }
@@ -343,9 +346,9 @@ export default function PortalSettingsPage() {
                   type="button"
                   disabled={testingDigest}
                   onClick={handleTestDigest}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
-                  {testingDigest ? "Generating..." : "⚡ Preview Current Week Digest"}
+                  {testingDigest ? "Sending Real Test Email..." : "✉️ Send Test Digest Email"}
                 </button>
               </div>
             </div>

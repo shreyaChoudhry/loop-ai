@@ -63,11 +63,18 @@ export async function sendEmail({
   to,
   subject,
   html,
+  requireRealDelivery = false,
 }: {
   to: string;
   subject: string;
   html: string;
-}): Promise<{ success: boolean; simulated: boolean; error?: string }> {
+  requireRealDelivery?: boolean;
+}): Promise<{
+  success: boolean;
+  simulated: boolean;
+  provider: "resend" | "simulated";
+  error?: string;
+}> {
   const resendApiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.EMAIL_FROM || "LOOP Updates <notifications@loop-feedback.com>";
 
@@ -90,23 +97,39 @@ export async function sendEmail({
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Resend delivery failed:", errorText);
-        return { success: false, simulated: false, error: errorText };
+        return {
+          success: false,
+          simulated: false,
+          provider: "resend",
+          error: `Resend error (${response.status}): ${errorText}`,
+        };
       }
 
-      return { success: true, simulated: false };
+      return { success: true, simulated: false, provider: "resend" };
     } catch (err) {
       console.error("Email send exception:", err);
       return {
         success: false,
         simulated: false,
-        error: err instanceof Error ? err.message : "Network error",
+        provider: "resend",
+        error: err instanceof Error ? err.message : "Network error contacting email provider",
       };
     }
   }
 
+  if (requireRealDelivery) {
+    return {
+      success: false,
+      simulated: false,
+      provider: "simulated",
+      error:
+        "RESEND_API_KEY environment variable is not configured. Real email delivery requires a valid Resend API key.",
+    };
+  }
+
   // Safe simulated mode: logs delivery without throwing errors or breaking user flow
   console.log(`[LOOP Email Simulation] To: ${to} | Subject: "${subject}"`);
-  return { success: true, simulated: true };
+  return { success: true, simulated: true, provider: "simulated" };
 }
 
 /**
