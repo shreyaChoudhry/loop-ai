@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import LoopLogo from "@/components/LoopLogo";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,16 +18,13 @@ export default function RegisterPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     setLoading(true);
     setMessage("");
 
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
           workspaceName,
@@ -52,185 +50,150 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white lg:grid lg:grid-cols-[58%_42%]">
-      {/* LEFT SECTION */}
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-[#ddd6ff] via-[#eeeaff] to-[#c9c1ff] lg:flex">
-        <div className="absolute inset-0">
-          <div className="absolute left-[-120px] top-20 h-96 w-96 rounded-full bg-white/50 blur-3xl" />
-          <div className="absolute bottom-[-100px] right-[-80px] h-96 w-96 rounded-full bg-purple-400/20 blur-3xl" />
+    <main className="min-h-screen bg-[#070814] text-white lg:grid lg:grid-cols-12 relative overflow-hidden">
+      {/* BACKGROUND COSMIC LIGHT BLOOMS */}
+      <div 
+        className="pointer-events-none absolute -top-40 right-[-10%] h-[600px] w-[600px] rounded-full blur-[140px] opacity-35"
+        style={{ background: "radial-gradient(circle, #A855F7 0%, #D946EF 50%, transparent 70%)" }}
+      />
+      <div 
+        className="pointer-events-none absolute -bottom-20 left-[10%] h-[500px] w-[500px] rounded-full blur-[150px] opacity-25"
+        style={{ background: "radial-gradient(circle, #8B2CFC 0%, #3B82F6 60%, transparent 70%)" }}
+      />
+
+      {/* LEFT SECTION (HERO / VALUE PROP) */}
+      <section className="relative hidden lg:flex lg:col-span-7 flex-col justify-between p-12 xl:p-16 border-r border-white/5">
+        <div>
+          <LoopLogo variant="stitch-nav" badge="v1.0" href="/" priority />
         </div>
 
-        <div className="relative flex w-full flex-col justify-between p-16">
-          {/* LOGO */}
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6655e8] text-white">
-              ◉
-            </div>
-
-            <span className="text-2xl font-bold">LOOP</span>
+        <div className="max-w-xl my-auto py-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-950/40 px-3.5 py-1 text-xs font-semibold text-purple-200 backdrop-blur-md mb-6">
+            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span>Start 14-Day Free Trial • No Credit Card</span>
           </div>
 
-          {/* CONTENT */}
-          <div className="max-w-xl">
-            <h1 className="text-5xl font-bold leading-tight">
-              Turn feedback
-              <br />
-              into better
-              <br />
-              <span className="text-[#6655e8]">products.</span>
-            </h1>
+          <h1 className="text-4xl xl:text-5xl font-black text-white leading-tight tracking-tight">
+            Turn customer feedback into
+            <br />
+            <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">
+              defensible product decisions.
+            </span>
+          </h1>
 
-            <p className="mt-6 max-w-md text-lg leading-8 text-gray-600">
-              Join LOOP and transform customer feedback into insights,
-              trends and product decisions.
-            </p>
-
-            {/* VISUAL */}
-            <div className="relative mt-10 h-80">
-              <div className="absolute left-1/2 top-6 flex h-56 w-56 -translate-x-1/2 items-center justify-center rounded-[45px] border border-white/80 bg-white/30 shadow-2xl backdrop-blur">
-                <div className="flex h-36 w-36 items-center justify-center rounded-full bg-gradient-to-br from-[#8d7cf4] to-[#5948d9] text-6xl shadow-xl">
-                  ✨
-                </div>
-              </div>
-
-              <div className="absolute left-2 top-28 rounded-xl border border-white/80 bg-white/70 p-4 shadow-lg backdrop-blur">
-                <p className="text-xs font-semibold">Customer Voice</p>
-                <p className="mt-2 text-xs text-gray-500">
-                  &quot;Easy to use!&quot;
-                </p>
-              </div>
-
-              <div className="absolute right-0 top-24 rounded-xl border border-white/80 bg-white/70 p-4 shadow-lg backdrop-blur">
-                <p className="text-xs font-semibold">AI Insight</p>
-                <p className="mt-2 text-xs text-gray-500">
-                  Positive sentiment ↑
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-500">
-            AI-powered customer feedback intelligence.
+          <p className="mt-6 text-sm xl:text-base text-slate-300 leading-relaxed font-normal">
+            Create your high-performance workspace in seconds. Analyze thousands of customer comments with AI, eliminate duplicate noise, and prioritize what to build next.
           </p>
+
+          <div className="mt-8 grid grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-md">
+              <div className="text-xl font-black text-purple-400">100%</div>
+              <div className="text-xs text-slate-400 mt-1">Workspace Isolation & Security</div>
+            </div>
+            <div className="rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-md">
+              <div className="text-xl font-black text-cyan-400">Multi-Channel</div>
+              <div className="text-xs text-slate-400 mt-1">Intercom, Discord, Portal & CSV</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-xs text-slate-500">
+          IDEAS → INSIGHTS → IMPACT &bull; Built for modern product teams.
         </div>
       </section>
 
-      {/* RIGHT REGISTER */}
-      <section className="flex min-h-screen items-center justify-center bg-white px-8 py-12">
+      {/* RIGHT SECTION (REGISTER FORM) */}
+      <section className="lg:col-span-5 flex min-h-screen items-center justify-center p-6 sm:p-12 relative z-20">
         <div className="w-full max-w-md">
-          {/* MOBILE LOGO */}
-          <div className="mb-10 flex items-center justify-center gap-2 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6655e8] text-white">
-              ◉
-            </div>
-
-            <span className="text-2xl font-bold">LOOP</span>
+          {/* Mobile brand header */}
+          <div className="mb-8 flex items-center justify-center lg:hidden">
+            <LoopLogo variant="stitch-nav" badge="AI 2.5" href="/" priority />
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-100">
-            <h2 className="text-2xl font-bold">Create your workspace</h2>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Create your company workspace and start using LOOP.
+          <div className="rounded-3xl border border-white/10 bg-[#0B1026]/90 p-8 shadow-2xl backdrop-blur-2xl">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Create your workspace</h2>
+            <p className="mt-1.5 text-xs text-slate-400">
+              Get started with LOOP in less than 2 minutes
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8">
-              {/* FULL NAME */}
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Full name
-                </label>
+            {message && (
+              <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/40 p-3 text-xs font-semibold text-rose-300">
+                {message}
+              </div>
+            )}
 
+            <form onSubmit={handleSubmit} className="mt-6 space-y-3.5">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Your Full Name
+                </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Jane Doe"
+                  placeholder="Alex Rivera"
                   required
-                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6655e8] focus:ring-2 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:bg-white/10 focus:ring-1 focus:ring-purple-500 transition"
                 />
               </div>
 
-              {/* WORKSPACE NAME */}
-              <div className="mt-5">
-                <label className="mb-2 block text-sm font-medium">
-                  Company / Workspace name
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Workspace Name
                 </label>
-
                 <input
                   type="text"
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
-                  placeholder="Acme Inc."
+                  placeholder="Acme SaaS"
                   required
-                  minLength={2}
-                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6655e8] focus:ring-2 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:bg-white/10 focus:ring-1 focus:ring-purple-500 transition"
                 />
-
-                <p className="mt-1.5 text-xs text-gray-400">
-                  Your company will get its own isolated LOOP workspace.
-                </p>
               </div>
 
-              {/* EMAIL */}
-              <div className="mt-5">
-                <label className="mb-2 block text-sm font-medium">
-                  Email address
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Work Email
                 </label>
-
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="jane@acme.com"
+                  placeholder="alex@acme.com"
                   required
-                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6655e8] focus:ring-2 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:bg-white/10 focus:ring-1 focus:ring-purple-500 transition"
                 />
               </div>
 
-              {/* PASSWORD */}
-              <div className="mt-5">
-                <label className="mb-2 block text-sm font-medium">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
                   Password
                 </label>
-
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 8 characters"
-                  minLength={8}
+                  placeholder="••••••••"
                   required
-                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6655e8] focus:ring-2 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:bg-white/10 focus:ring-1 focus:ring-purple-500 transition"
                 />
               </div>
 
-              {/* BUTTON */}
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-6 w-full rounded-lg bg-[#6655e8] py-3.5 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition hover:bg-[#5847d8] disabled:opacity-60"
+                className="w-full mt-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 py-3 text-xs font-bold text-white shadow-glow-sm hover:shadow-glow-md hover:opacity-95 transition disabled:opacity-50"
               >
-                {loading ? "Creating workspace..." : "Create workspace"}
+                {loading ? "Creating Workspace..." : "Create Workspace →"}
               </button>
-
-              {/* ERROR */}
-              {message && (
-                <p className="mt-4 text-center text-sm text-red-500">
-                  {message}
-                </p>
-              )}
             </form>
 
-            <p className="mt-7 text-center text-sm text-gray-500">
+            <div className="mt-6 border-t border-white/10 pt-4 text-center text-xs text-slate-400">
               Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-semibold text-[#6655e8] hover:underline"
-              >
-                Log in
+              <Link href="/login" className="font-semibold text-purple-400 hover:text-purple-300">
+                Sign in
               </Link>
-            </p>
+            </div>
           </div>
         </div>
       </section>

@@ -408,18 +408,23 @@ export default async function AnalyticsPage({
     // --------------------------------
 
     return (
-        <main className="min-h-screen bg-gray-50 p-8">
+        <div className="space-y-6">
             {/* Header */}
 
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">
-                    Analytics
-                </h1>
-
-                <p className="mt-2 text-gray-500">
-                    Understand feedback volume, sentiment,
-                    channels, ratings, and customer themes.
-                </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <div className="flex items-center gap-2.5">
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                            Feedback Analytics
+                        </h1>
+                        <span className="rounded-full bg-purple-100 border border-purple-200/80 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
+                            Signal Trends
+                        </span>
+                    </div>
+                    <p className="mt-1 text-xs sm:text-sm text-slate-500">
+                        Understand feedback volume, sentiment trajectory, channel breakdowns, ratings, and customer themes.
+                    </p>
+                </div>
             </div>
 
             {/* Filters */}
@@ -544,6 +549,6 @@ export default async function AnalyticsPage({
                     data={themeImpactData}
                 />
             </div>
-        </main>
+        </div>
     );
 }

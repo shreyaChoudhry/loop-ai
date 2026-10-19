@@ -436,7 +436,7 @@ export default async function ThemesPage() {
   // --------------------------------
 
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       {/* Header */}
 
       <div>
@@ -748,6 +748,6 @@ export default async function ThemesPage() {
           </div>
         )}
       </section>
-    </main>
+    </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import LoopLogo from "@/components/LoopLogo";
 
 type PortalData = {
   name: string;
@@ -562,12 +563,14 @@ export default function PublicPortalPage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="mt-16 border-t bg-white py-6 text-center text-xs text-gray-400">
-        Powered by{" "}
-        <Link href="/" className="font-semibold text-violet-600 hover:underline">
-          LOOP
-        </Link>{" "}
-        &bull; Feedback-to-Roadmap Intelligence
+      <footer className="mt-16 border-t bg-white py-8 text-center text-xs text-gray-400">
+        <div className="flex flex-col items-center justify-center gap-2">
+          <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <LoopLogo variant="icon" width={24} height={24} className="h-6 w-6 rounded-md shadow-xs" />
+            <span className="font-semibold text-gray-700">Powered by LOOP</span>
+          </Link>
+          <p className="text-[11px] text-gray-400">Feedback-to-Roadmap Platform &bull; Ideas → Insights → Impact</p>
+        </div>
       </footer>
 
       {/* SUBMISSION MODAL */}

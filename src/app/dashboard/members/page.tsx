@@ -84,7 +84,7 @@ export default async function MembersPage() {
   ).length;
 
   return (
-    <main className="mx-auto max-w-7xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="mb-8">
         <p className="text-sm font-medium text-violet-600">
@@ -319,6 +319,6 @@ export default async function MembersPage() {
           </>
         )}
       </section>
-    </main>
+    </div>
   );
 }

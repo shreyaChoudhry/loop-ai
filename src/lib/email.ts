@@ -174,18 +174,58 @@ export async function notifySubscribersForRequest(
     };
   }
 
-  // Collect unique recipient emails
+  // Also query child requests merged into this canonical request
+  const childDuplicates = await prisma.request.findMany({
+    where: { canonicalRequestId: requestId },
+    include: {
+      votes: {
+        where: {
+          notifyOnUpdate: true,
+          voterEmail: { not: null },
+        },
+        select: {
+          voterEmail: true,
+        },
+      },
+    },
+  });
+
+  // Collect unique, normalized recipient emails
   const emailSet = new Set<string>();
 
   // 1. Author email if opted in
   if (request.authorEmail && request.notifyOnUpdate) {
-    emailSet.add(request.authorEmail.toLowerCase().trim());
+    const clean = request.authorEmail.toLowerCase().trim();
+    if (clean.includes("@")) {
+      emailSet.add(clean);
+    }
   }
 
-  // 2. Voter emails who opted in
+  // 2. Primary request voter emails who opted in
   for (const vote of request.votes) {
     if (vote.voterEmail) {
-      emailSet.add(vote.voterEmail.toLowerCase().trim());
+      const clean = vote.voterEmail.toLowerCase().trim();
+      if (clean.includes("@")) {
+        emailSet.add(clean);
+      }
+    }
+  }
+
+  // 3. Merged duplicate request authors and voters who opted in
+  for (const dup of childDuplicates) {
+    if (dup.authorEmail && dup.notifyOnUpdate) {
+      const clean = dup.authorEmail.toLowerCase().trim();
+      if (clean.includes("@")) {
+        emailSet.add(clean);
+      }
+    }
+    for (const vote of dup.votes) {
+      if (vote.voterEmail) {
+        const clean = vote.voterEmail.toLowerCase().trim();
+        if (clean.includes("@")) {
+          emailSet.add(clean);
+        }
+      }
     }
   }
 
@@ -213,7 +253,7 @@ export async function notifySubscribersForRequest(
   let simulatedAny = false;
 
   for (const recipient of recipients) {
-    // Check if notification was already sent to this recipient for this status
+    // Check if notification was already delivered to this recipient for this status
     const existing = await prisma.notificationRecord.findUnique({
       where: {
         requestId_recipient_status: {
@@ -224,7 +264,8 @@ export async function notifySubscribersForRequest(
       },
     });
 
-    if (existing) {
+    // Only skip if already delivered or simulated; allow retrying failed deliveries
+    if (existing && existing.deliveryStatus !== "FAILED") {
       skippedCount++;
       continue;
     }
@@ -270,12 +311,26 @@ export async function notifySubscribersForRequest(
 
     const result = await sendEmail({ to: recipient, subject, html });
 
-    await prisma.notificationRecord.create({
-      data: {
+    const deliveryStatus = result.simulated ? "SIMULATED" : result.success ? "SENT" : "FAILED";
+
+    await prisma.notificationRecord.upsert({
+      where: {
+        requestId_recipient_status: {
+          requestId: request.id,
+          recipient,
+          status: newStatus,
+        },
+      },
+      create: {
         requestId: request.id,
         recipient,
         status: newStatus,
-        deliveryStatus: result.simulated ? "SIMULATED" : result.success ? "SENT" : "FAILED",
+        deliveryStatus,
+        sentAt: new Date(),
+      },
+      update: {
+        deliveryStatus,
+        sentAt: new Date(),
       },
     });
 

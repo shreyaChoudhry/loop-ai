@@ -12,13 +12,8 @@ import TopThemes from "./TopTheme";
 import RecentFeedback from "./RecentFeedback";
 import QuickActions from "./QuickActions";
 import AIInsight from "./AIInsight";
-import LogoutButton from "./LogoutButton";
 
 export default async function DashboardPage() {
-  // --------------------------------
-  // Authentication
-  // --------------------------------
-
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -29,27 +24,16 @@ export default async function DashboardPage() {
 
   if (!workspaceId) {
     return (
-      <main className="min-h-screen bg-gray-50 p-8">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6">
-          <h1 className="text-lg font-semibold text-red-700">
-            Workspace not found
-          </h1>
-
-          <p className="mt-2 text-sm text-red-600">
-            Your account is not connected to a workspace.
-          </p>
-        </div>
-      </main>
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center">
+        <h1 className="text-base font-bold text-rose-800">Workspace not found</h1>
+        <p className="mt-1 text-xs text-rose-600">
+          Your account is not connected to a workspace.
+        </p>
+      </div>
     );
   }
 
-  // --------------------------------
-  // Base workspace filter & info
-  // --------------------------------
-
-  const workspaceFilter = {
-    workspaceId,
-  };
+  const workspaceFilter = { workspaceId };
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -64,50 +48,21 @@ export default async function DashboardPage() {
     where: workspaceFilter,
   });
 
-  // --------------------------------
-  // Total feedback
-  // --------------------------------
-
   const totalFeedback = await prisma.feedback.count({
     where: workspaceFilter,
   });
 
-  // --------------------------------
-  // Positive feedback
-  // --------------------------------
-
   const positiveFeedback = await prisma.feedback.count({
-    where: {
-      ...workspaceFilter,
-      sentiment: "POSITIVE",
-    },
+    where: { ...workspaceFilter, sentiment: "POSITIVE" },
   });
-
-  // --------------------------------
-  // Neutral feedback
-  // --------------------------------
 
   const neutralFeedback = await prisma.feedback.count({
-    where: {
-      ...workspaceFilter,
-      sentiment: "NEUTRAL",
-    },
+    where: { ...workspaceFilter, sentiment: "NEUTRAL" },
   });
-
-  // --------------------------------
-  // Negative feedback
-  // --------------------------------
 
   const negativeFeedback = await prisma.feedback.count({
-    where: {
-      ...workspaceFilter,
-      sentiment: "NEGATIVE",
-    },
+    where: { ...workspaceFilter, sentiment: "NEGATIVE" },
   });
-
-  // --------------------------------
-  // Feedback from last 7 days
-  // --------------------------------
 
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -115,173 +70,95 @@ export default async function DashboardPage() {
   const newThisWeek = await prisma.feedback.count({
     where: {
       ...workspaceFilter,
-      createdAt: {
-        gte: sevenDaysAgo,
-      },
+      createdAt: { gte: sevenDaysAgo },
     },
   });
-
-  // --------------------------------
-  // Sentiment percentages
-  // --------------------------------
 
   const positivePercentage =
-    totalFeedback > 0
-      ? Math.round((positiveFeedback / totalFeedback) * 100)
-      : 0;
-
+    totalFeedback > 0 ? Math.round((positiveFeedback / totalFeedback) * 100) : 0;
   const neutralPercentage =
-    totalFeedback > 0
-      ? Math.round((neutralFeedback / totalFeedback) * 100)
-      : 0;
-
+    totalFeedback > 0 ? Math.round((neutralFeedback / totalFeedback) * 100) : 0;
   const negativePercentage =
-    totalFeedback > 0
-      ? Math.round((negativeFeedback / totalFeedback) * 100)
-      : 0;
+    totalFeedback > 0 ? Math.round((negativeFeedback / totalFeedback) * 100) : 0;
 
-  // --------------------------------
-  // Feedback chart data
-  // --------------------------------
-
+  // Chart data
   const feedbackRecords = await prisma.feedback.findMany({
     where: workspaceFilter,
-    select: {
-      createdAt: true,
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
+    select: { createdAt: true },
+    orderBy: { createdAt: "asc" },
   });
 
-  const feedbackChartData: {
-    date: string;
-    count: number;
-  }[] = [];
-
+  const feedbackChartData: { date: string; count: number }[] = [];
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
-
     date.setDate(date.getDate() - i);
-
     const dateString = date.toISOString().split("T")[0];
 
     const count = feedbackRecords.filter((feedback) => {
-      const feedbackDate = new Date(feedback.createdAt)
-        .toISOString()
-        .split("T")[0];
-
+      const feedbackDate = new Date(feedback.createdAt).toISOString().split("T")[0];
       return feedbackDate === dateString;
     }).length;
 
-    feedbackChartData.push({
-      date: dateString,
-      count,
-    });
+    feedbackChartData.push({ date: dateString, count });
   }
 
-  // --------------------------------
   // Top channels
-  // --------------------------------
-
   const channelCounts = await prisma.feedback.groupBy({
     by: ["source"],
     where: workspaceFilter,
-    _count: {
-      source: true,
-    },
+    _count: { source: true },
   });
 
   const topChannels = [
     {
       name: "Website",
-      count:
-        channelCounts.find(
-          (item) => item.source === "WEBSITE"
-        )?._count.source ?? 0,
+      count: channelCounts.find((item) => item.source === "WEBSITE")?._count.source ?? 0,
     },
     {
       name: "Email",
-      count:
-        channelCounts.find(
-          (item) => item.source === "EMAIL"
-        )?._count.source ?? 0,
+      count: channelCounts.find((item) => item.source === "EMAIL")?._count.source ?? 0,
     },
     {
       name: "Support",
-      count:
-        channelCounts.find(
-          (item) => item.source === "SUPPORT"
-        )?._count.source ?? 0,
+      count: channelCounts.find((item) => item.source === "SUPPORT")?._count.source ?? 0,
     },
     {
       name: "Survey",
-      count:
-        channelCounts.find(
-          (item) => item.source === "SURVEY"
-        )?._count.source ?? 0,
+      count: channelCounts.find((item) => item.source === "SURVEY")?._count.source ?? 0,
     },
     {
       name: "Other",
-      count:
-        channelCounts.find(
-          (item) => item.source === "OTHER"
-        )?._count.source ?? 0,
+      count: channelCounts.find((item) => item.source === "OTHER")?._count.source ?? 0,
     },
   ];
 
-  // --------------------------------
-  // Trending themes
-  // --------------------------------
-
+  // Top themes
   const workspaceFeedbackIds = await prisma.feedback.findMany({
     where: workspaceFilter,
-    select: {
-      id: true,
-    },
+    select: { id: true },
   });
 
-  const feedbackIds = workspaceFeedbackIds.map(
-    (feedback) => feedback.id
-  );
-
+  const feedbackIds = workspaceFeedbackIds.map((feedback) => feedback.id);
   const themeFeedbackCounts =
     feedbackIds.length > 0
       ? await prisma.feedbackTheme.groupBy({
           by: ["themeId"],
-          where: {
-            feedbackId: {
-              in: feedbackIds,
-            },
-          },
-          _count: {
-            themeId: true,
-          },
+          where: { feedbackId: { in: feedbackIds } },
+          _count: { themeId: true },
         })
       : [];
 
-  const themeIds = themeFeedbackCounts.map(
-    (item) => item.themeId
-  );
-
+  const themeIds = themeFeedbackCounts.map((item) => item.themeId);
   const themes =
     themeIds.length > 0
       ? await prisma.theme.findMany({
-          where: {
-            id: {
-              in: themeIds,
-            },
-            workspaceId,
-          },
+          where: { id: { in: themeIds }, workspaceId },
         })
       : [];
 
   const topThemes = themes
     .map((theme) => {
-      const themeCount = themeFeedbackCounts.find(
-        (item) => item.themeId === theme.id
-      );
-
+      const themeCount = themeFeedbackCounts.find((item) => item.themeId === theme.id);
       return {
         name: theme.name,
         count: themeCount?._count.themeId ?? 0,
@@ -290,10 +167,7 @@ export default async function DashboardPage() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  // --------------------------------
   // Recent feedback
-  // --------------------------------
-
   const recentFeedback = await prisma.feedback.findMany({
     where: workspaceFilter,
     select: {
@@ -304,170 +178,164 @@ export default async function DashboardPage() {
       status: true,
       createdAt: true,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
     take: 5,
   });
 
-  // --------------------------------
-  // Dashboard UI
-  // --------------------------------
-
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      {/* Welcome */}
+    <div className="space-y-8">
+      {/* Welcome Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            Welcome back, {session.user.name}! 👋
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
+            Here is what is happening across your customer signals and roadmap today.
+          </p>
+        </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {session.user.name}! 👋
-        </h1>
+        <div className="flex items-center gap-2">
+          {workspace?.slug && (
+            <Link
+              href={`/portal/${workspace.slug}`}
+              target="_blank"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm"
+            >
+              <span>🔗 Public Portal</span>
+              <span className="text-[10px] text-slate-400">↗</span>
+            </Link>
+          )}
 
-        <p className="mt-2 text-gray-500">
-         Here&apos;s what&apos;s happening with your feedback today.
-        </p>
+          <Link
+            href="/dashboard/prioritization"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition"
+          >
+            <span>Evidence Matrix</span>
+            <span>→</span>
+          </Link>
+        </div>
       </div>
 
-      {/* Feedback-to-Roadmap Founder Action Center */}
-      <div className="mb-8 rounded-2xl border border-violet-100 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
+      {/* CLOSE THE LOOP FOUNDER WORKFLOW */}
+      <div className="rounded-2xl border border-purple-100 bg-gradient-to-r from-purple-50/40 via-white to-purple-50/20 p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-purple-100 pb-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700">
-              ◉ CLOSE THE LOOP WORKFLOW
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100/80 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 tracking-wider uppercase">
+              <span className="h-1.5 w-1.5 rounded-full bg-purple-600 animate-pulse" />
+              Close The Loop Engine
             </div>
-            <h2 className="mt-2 text-lg font-bold text-gray-900">
-              Feedback-to-Roadmap Engine
+            <h2 className="mt-1.5 text-base font-bold text-slate-900">
+              Transform Feedback into Defensible Product Decisions
             </h2>
-            <p className="text-xs text-gray-500">
-              Turn scattered customer feedback into evidence-backed product decisions and public roadmap updates.
+            <p className="text-xs text-slate-500">
+              A 4-step systematic pipeline connecting raw customer voice to a prioritized roadmap.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {workspace?.slug ? (
-              <Link
-                href={`/portal/${workspace.slug}`}
-                target="_blank"
-                className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-              >
-                <span>🔗 Public Portal</span>
-                <span className="text-[10px] text-gray-400">↗</span>
-              </Link>
-            ) : (
-              <Link
-                href="/dashboard/settings/portal"
-                className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100"
-              >
-                Set Portal URL Slug
-              </Link>
-            )}
-
-            <Link
-              href="/dashboard/roadmap"
-              className="rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-violet-700"
-            >
-              Manage Roadmap →
-            </Link>
-          </div>
+          <Link
+            href="/dashboard/roadmap"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition shadow-sm shrink-0"
+          >
+            <span>Manage Roadmap</span>
+            <span>→</span>
+          </Link>
         </div>
 
         {/* 4 Steps Checklist */}
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/dashboard/inbox"
-            className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 hover:border-violet-200 hover:bg-white transition"
+            className="rounded-xl border border-slate-200/80 bg-white p-3.5 hover:border-purple-300 hover:shadow-sm transition"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase">Step 1</span>
-              <span className="text-xs font-bold text-violet-600">{totalFeedback} items</span>
+            <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase">
+              <span>Step 1</span>
+              <span className="text-xs font-bold text-purple-700">{totalFeedback} items</span>
             </div>
-            <h3 className="mt-1 text-xs font-bold text-gray-900">Collect Feedback</h3>
-            <p className="text-[11px] text-gray-500">Import CSV or ingest webhooks</p>
+            <h3 className="mt-1 text-xs font-bold text-slate-900">Collect Feedback</h3>
+            <p className="mt-0.5 text-[11px] text-slate-500">Import CSV or ingest webhooks</p>
           </Link>
 
           <Link
             href="/dashboard/settings/portal"
-            className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 hover:border-violet-200 hover:bg-white transition"
+            className="rounded-xl border border-slate-200/80 bg-white p-3.5 hover:border-purple-300 hover:shadow-sm transition"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase">Step 2</span>
-              <span className="text-xs font-bold text-emerald-600">
+            <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase">
+              <span>Step 2</span>
+              <span className={`text-xs font-bold ${workspace?.portalEnabled ? "text-emerald-600" : "text-amber-600"}`}>
                 {workspace?.portalEnabled ? "Active" : "Disabled"}
               </span>
             </div>
-            <h3 className="mt-1 text-xs font-bold text-gray-900">Share Public Portal</h3>
-            <p className="text-[11px] text-gray-500">Collect votes and ideas from users</p>
+            <h3 className="mt-1 text-xs font-bold text-slate-900">Share Public Portal</h3>
+            <p className="mt-0.5 text-[11px] text-slate-500">Collect votes and ideas from users</p>
           </Link>
 
           <Link
             href="/dashboard/prioritization"
-            className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 hover:border-violet-200 hover:bg-white transition"
+            className="rounded-xl border border-slate-200/80 bg-white p-3.5 hover:border-purple-300 hover:shadow-sm transition"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase">Step 3</span>
-              <span className="text-xs font-bold text-violet-600">{totalRequests} ideas</span>
+            <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase">
+              <span>Step 3</span>
+              <span className="text-xs font-bold text-purple-700">{totalRequests} ideas</span>
             </div>
-            <h3 className="mt-1 text-xs font-bold text-gray-900">Prioritize Evidence</h3>
-            <p className="text-[11px] text-gray-500">Rank by votes, feedback & effort</p>
+            <h3 className="mt-1 text-xs font-bold text-slate-900">Prioritize Evidence</h3>
+            <p className="mt-0.5 text-[11px] text-slate-500">Mathematical algorithmic ranking</p>
           </Link>
 
           <Link
             href="/dashboard/roadmap"
-            className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 hover:border-violet-200 hover:bg-white transition"
+            className="rounded-xl border border-slate-200/80 bg-white p-3.5 hover:border-purple-300 hover:shadow-sm transition"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase">Step 4</span>
-              <span className="text-xs font-bold text-violet-600">{totalVotes} votes</span>
+            <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase">
+              <span>Step 4</span>
+              <span className="text-xs font-bold text-purple-700">{totalVotes} votes</span>
             </div>
-            <h3 className="mt-1 text-xs font-bold text-gray-900">Close The Loop</h3>
-            <p className="text-[11px] text-gray-500">Publish roadmap & notify voters</p>
+            <h3 className="mt-1 text-xs font-bold text-slate-900">Close The Loop</h3>
+            <p className="mt-0.5 text-[11px] text-slate-500">Publish roadmap & notify voters</p>
           </Link>
         </div>
       </div>
 
-      {/* Stats */}
-
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-5">
+      {/* KPI STAT CARDS */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           title="Total Feedback"
           value={totalFeedback}
-          description="All feedback records"
+          description="All feedback records ingested"
+          trend="+18%"
+          trendPositive={true}
         />
-
         <StatCard
           title="Positive Sentiment"
           value={`${positivePercentage}%`}
-          description={`${positiveFeedback} positive feedback`}
+          description={`${positiveFeedback} positive signals`}
+          trend="+4.2%"
+          trendPositive={true}
         />
-
         <StatCard
           title="Negative Sentiment"
           value={`${negativePercentage}%`}
-          description={`${negativeFeedback} negative feedback`}
+          description={`${negativeFeedback} friction points`}
+          trend="-2.1%"
+          trendPositive={true}
         />
-
         <StatCard
           title="Neutral Sentiment"
           value={`${neutralPercentage}%`}
-          description={`${neutralFeedback} neutral feedback`}
+          description={`${neutralFeedback} neutral signals`}
         />
-
         <StatCard
           title="New This Week"
           value={newThisWeek}
-          description="Feedback received in last 7 days"
+          description="Signals in last 7 days"
+          trend="+12 this wk"
+          trendPositive={true}
         />
       </div>
 
-      {/* Charts */}
-
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Feedback Over Time */}
-
+      {/* CHARTS GRID */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <FeedbackChart data={feedbackChartData} />
-
-        {/* Sentiment Distribution */}
-
         <Sentiment
           positive={positiveFeedback}
           neutral={neutralFeedback}
@@ -475,50 +343,20 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Top Channels */}
-
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* CHANNELS & THEMES GRID */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <TopChannels channels={topChannels} />
-      </div>
-
-      {/* Trending Themes */}
-
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <TopThemes themes={topThemes} />
       </div>
 
-      {/* Recent Feedback */}
+      {/* RECENT FEEDBACK */}
+      <RecentFeedback feedback={recentFeedback} />
 
-      <div className="mt-6">
-        <RecentFeedback feedback={recentFeedback} />
-      </div>
-
-      {/* Quick Actions + AI Insight */}
-
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* QUICK ACTIONS & AI INSIGHT */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <QuickActions />
         <AIInsight />
       </div>
-
-      {/* Temporary user information */}
-
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6">
-        <p className="text-sm text-gray-500">
-          Logged in as
-        </p>
-
-        <p className="mt-1 font-medium">
-          {session.user.name}
-        </p>
-
-        <p className="mt-2 text-sm text-gray-500">
-          Role: {session.user.role}
-        </p>
-
-        <div className="mt-5">
-          <LogoutButton />
-        </div>
-      </div>
-    </main>
+    </div>
   );
 }

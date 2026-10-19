@@ -246,22 +246,33 @@ export async function GET(request: Request) {
     const targetWorkspaceId = searchParams.get("workspaceId");
 
     const session = await getServerSession(authOptions);
-    const isAuthorizedCron =
-      process.env.CRON_SECRET && cronSecret === process.env.CRON_SECRET;
-    const isAuthorizedSession = Boolean(session?.user?.workspaceId);
-
-    if (!isAuthorizedCron && !isAuthorizedSession) {
-      return NextResponse.json(
-        { error: "Unauthorized: Missing valid session or CRON_SECRET." },
-        { status: 401 }
-      );
-    }
+    const isAuthorizedCron = Boolean(
+      process.env.CRON_SECRET && cronSecret && cronSecret === process.env.CRON_SECRET
+    );
+    const isAdminSession = Boolean(
+      session?.user?.workspaceId && session?.user?.role === "ADMIN"
+    );
+    const isMemberSession = Boolean(session?.user?.workspaceId);
 
     // ----------------------------------------------------
     // Scenario 1: Admin sends a REAL test digest email (sendTest=true)
     // ----------------------------------------------------
     if (sendTest) {
-      const workspaceId = targetWorkspaceId || session?.user?.workspaceId;
+      if (!isAdminSession && !isAuthorizedCron) {
+        if (session?.user) {
+          return NextResponse.json(
+            { error: "Forbidden: Only workspace administrators can trigger test digest emails." },
+            { status: 403 }
+          );
+        }
+        return NextResponse.json(
+          { error: "Unauthorized: Valid ADMIN session or CRON_SECRET is required." },
+          { status: 401 }
+        );
+      }
+
+      // If invoked by session, restrict strictly to the user's workspace
+      const workspaceId = session?.user?.workspaceId || targetWorkspaceId;
       if (!workspaceId) {
         return NextResponse.json(
           { error: "Workspace ID is required for test digest." },
@@ -299,7 +310,7 @@ export async function GET(request: Request) {
         workspace.name
       );
 
-      // Require real delivery so unconfigured email is not faked
+      // Require real delivery so unconfigured email is never faked
       const emailResult = await sendEmail({
         to: recipientEmail,
         subject: `[Test] Weekly LOOP Digest: ${stats.totalFeedback} new feedback items, ${stats.topRequestsCount} top requests`,
@@ -307,13 +318,13 @@ export async function GET(request: Request) {
         requireRealDelivery: true,
       });
 
-      if (!emailResult.success) {
+      if (!emailResult.success || emailResult.simulated) {
         return NextResponse.json(
           {
             success: false,
             sent: false,
-            simulated: false,
-            error: emailResult.error || "Email delivery failed.",
+            simulated: Boolean(emailResult.simulated),
+            error: emailResult.error || "Real email delivery failed or provider is unconfigured.",
             recipient: recipientEmail,
           },
           { status: 400 }
@@ -336,7 +347,14 @@ export async function GET(request: Request) {
     // Scenario 2: Preview current week digest data in UI (preview=true)
     // ----------------------------------------------------
     if (preview) {
-      const workspaceId = targetWorkspaceId || session?.user?.workspaceId;
+      if (!isMemberSession && !isAuthorizedCron) {
+        return NextResponse.json(
+          { error: "Unauthorized: Missing valid session or CRON_SECRET." },
+          { status: 401 }
+        );
+      }
+
+      const workspaceId = session?.user?.workspaceId || targetWorkspaceId;
       if (!workspaceId) {
         return NextResponse.json(
           { error: "Workspace ID is required for digest preview." },
@@ -383,13 +401,22 @@ export async function GET(request: Request) {
 
     // ----------------------------------------------------
     // Scenario 3: Automated Scheduled Cron Execution
+    // Requires a valid CRON_SECRET
     // ----------------------------------------------------
-    const targetId = targetWorkspaceId || session?.user?.workspaceId;
+    if (!isAuthorizedCron) {
+      return NextResponse.json(
+        { error: "Unauthorized: A valid CRON_SECRET is required for scheduled cron execution." },
+        { status: 401 }
+      );
+    }
 
-    if (targetId) {
-      // Process single workspace
+    // 6-day cycle threshold to prevent duplicate weekly sends for the same period
+    const minCycleInterval = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+
+    // If specific workspace targeted via cron
+    if (targetWorkspaceId) {
       const workspace = await prisma.workspace.findUnique({
-        where: { id: targetId },
+        where: { id: targetWorkspaceId },
         include: {
           users: {
             where: { role: "ADMIN" },
@@ -414,6 +441,30 @@ export async function GET(request: Request) {
         );
       }
 
+      // Optimistic concurrency lock: Claim workspace atomically
+      const claim = await prisma.workspace.updateMany({
+        where: {
+          id: workspace.id,
+          digestEnabled: true,
+          OR: [
+            { digestLastSentAt: null },
+            { digestLastSentAt: { lt: minCycleInterval } },
+          ],
+        },
+        data: {
+          digestLastSentAt: new Date(),
+        },
+      });
+
+      if (claim.count === 0) {
+        return NextResponse.json({
+          success: true,
+          sent: false,
+          skipped: true,
+          message: "Digest already sent for this weekly period or claimed by concurrent execution.",
+        });
+      }
+
       const { stats, digestHtml } = await generateDigestData(
         workspace.id,
         workspace.name
@@ -423,23 +474,38 @@ export async function GET(request: Request) {
         to: recipientEmail,
         subject: `Weekly LOOP Digest: ${stats.totalFeedback} new feedback items, ${stats.topRequestsCount} top requests`,
         html: digestHtml,
-        requireRealDelivery: false,
+        requireRealDelivery: true,
       });
 
-      await prisma.workspace.update({
-        where: { id: workspace.id },
-        data: { digestLastSentAt: new Date() },
-      });
+      // If delivery failed or was simulated, revert timestamp
+      if (!emailResult.success || emailResult.simulated) {
+        await prisma.workspace.update({
+          where: { id: workspace.id },
+          data: { digestLastSentAt: workspace.digestLastSentAt },
+        });
+
+        return NextResponse.json(
+          {
+            success: false,
+            sent: false,
+            simulated: Boolean(emailResult.simulated),
+            error: emailResult.error || "Email delivery failed or provider unconfigured.",
+            recipient: recipientEmail,
+          },
+          { status: 500 }
+        );
+      }
 
       return NextResponse.json({
         success: true,
-        sent: emailResult.success,
-        simulated: emailResult.simulated,
+        sent: true,
+        simulated: false,
+        provider: emailResult.provider,
         recipient: recipientEmail,
       });
     }
 
-    // Process all workspaces where digestEnabled = true
+    // Process all active workspaces
     const activeWorkspaces = await prisma.workspace.findMany({
       where: { digestEnabled: true },
       include: {
@@ -455,24 +521,63 @@ export async function GET(request: Request) {
       const recipient = ws.digestEmail || ws.users[0]?.email;
       if (!recipient) continue;
 
+      // Optimistic concurrency lock: Claim workspace atomically
+      const claim = await prisma.workspace.updateMany({
+        where: {
+          id: ws.id,
+          digestEnabled: true,
+          OR: [
+            { digestLastSentAt: null },
+            { digestLastSentAt: { lt: minCycleInterval } },
+          ],
+        },
+        data: {
+          digestLastSentAt: new Date(),
+        },
+      });
+
+      if (claim.count === 0) {
+        results.push({
+          workspaceId: ws.id,
+          recipient,
+          sent: false,
+          skipped: true,
+          reason: "Digest already sent for this weekly period or claimed by concurrent execution.",
+        });
+        continue;
+      }
+
       const { stats, digestHtml } = await generateDigestData(ws.id, ws.name);
       const emailResult = await sendEmail({
         to: recipient,
         subject: `Weekly LOOP Digest: ${stats.totalFeedback} new feedback items, ${stats.topRequestsCount} top requests`,
         html: digestHtml,
-        requireRealDelivery: false,
+        requireRealDelivery: true,
       });
 
-      await prisma.workspace.update({
-        where: { id: ws.id },
-        data: { digestLastSentAt: new Date() },
-      });
+      if (!emailResult.success || emailResult.simulated) {
+        // Revert timestamp since real delivery did not take place
+        await prisma.workspace.update({
+          where: { id: ws.id },
+          data: { digestLastSentAt: ws.digestLastSentAt },
+        });
+
+        results.push({
+          workspaceId: ws.id,
+          recipient,
+          sent: false,
+          simulated: Boolean(emailResult.simulated),
+          error: emailResult.error || "Email delivery failed or provider unconfigured.",
+        });
+        continue;
+      }
 
       results.push({
         workspaceId: ws.id,
         recipient,
-        sent: emailResult.success,
-        simulated: emailResult.simulated,
+        sent: true,
+        simulated: false,
+        provider: emailResult.provider,
       });
     }
 

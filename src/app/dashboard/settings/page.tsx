@@ -19,6 +19,7 @@ export default async function SettingsPage() {
     select: {
       id: true,
       name: true,
+      slug: true,
     },
   });
 
@@ -27,229 +28,150 @@ export default async function SettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Settings
+    <div className="space-y-6 max-w-4xl">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            Settings & Configurations
           </h1>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Manage your workspace, account and application preferences.
-          </p>
+          <span className="rounded-full bg-purple-100 border border-purple-200/80 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
+            Workspace Hub
+          </span>
         </div>
-
-        <div className="space-y-6">
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Workspace
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Basic information about your LOOP workspace.
-            </p>
-
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Workspace Name
-                </label>
-
-                <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900">
-                  {workspace.name}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Workspace ID
-                </label>
-
-                <div className="mt-2 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  {workspace.id}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Account
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Information about your current LOOP account.
-            </p>
-
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Name
-                </label>
-
-                <div className="mt-2 rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-900">
-                  {session.user.name || "Not provided"}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Email
-                </label>
-
-                <div className="mt-2 rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-900">
-                  {session.user.email || "Not provided"}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Role
-                </label>
-
-                <div className="mt-2 inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
-                  {session.user.role}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Appearance
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Customize how LOOP looks for you.
-            </p>
-
-            <div className="mt-5 flex items-center justify-between rounded-lg border border-slate-200 p-4">
-              <div>
-                <p className="text-sm font-medium text-slate-900">
-                  Interface theme
-                </p>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Light theme is currently active.
-                </p>
-              </div>
-
-              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
-                Light
-              </span>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Notifications
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Manage notification preferences.
-            </p>
-
-            <div className="mt-5 space-y-4">
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    Report notifications
-                  </p>
-
-                  <p className="mt-1 text-xs text-slate-500">
-                    Receive updates when reports are generated.
-                  </p>
-                </div>
-
-                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-500">
-                  Coming soon
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    AI processing alerts
-                  </p>
-
-                  <p className="mt-1 text-xs text-slate-500">
-                    Get notified about important processing events.
-                  </p>
-                </div>
-
-                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-500">
-                  Coming soon
-                </span>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Public Feedback Portal & Weekly Digest
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Configure your customer-facing feedback board, public URL slug, custom branding, and weekly founder digest.
-                </p>
-              </div>
-
-              <Link
-                href="/dashboard/settings/portal"
-                className="inline-flex items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700"
-              >
-                Configure Portal →
-              </Link>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Integrations & Webhooks
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Workspace API keys, incoming feedback webhooks, and website widget snippets.
-                </p>
-              </div>
-
-              <Link
-                href="/dashboard/settings/integrations"
-                className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
-              >
-                Manage API Keys & Webhooks →
-              </Link>
-            </div>
-          </section>
-
-          {session.user.role === "ADMIN" && (
-            <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Team Members
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Manage users and workspace access.
-                  </p>
-                </div>
-
-                <Link
-                  href="/dashboard/settings/users"
-                  className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
-                >
-                  Manage Members
-                </Link>
-              </div>
-            </section>
-          )}
-        </div>
+        <p className="mt-1 text-xs sm:text-sm text-slate-500">
+          Manage workspace settings, public portal branding, API keys, and notification preferences.
+        </p>
       </div>
-    </main>
+
+      <div className="space-y-6">
+        {/* Workspace Info */}
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            Workspace Environment
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Current active database workspace and identifiers.
+          </p>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 text-xs">
+            <div>
+              <span className="font-semibold text-slate-500 block mb-1">Workspace Name</span>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-bold text-slate-900">
+                {workspace.name}
+              </div>
+            </div>
+
+            <div>
+              <span className="font-semibold text-slate-500 block mb-1">Database Workspace ID</span>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-mono text-slate-600 truncate">
+                {workspace.id}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Account Info */}
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            User Account
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Profile and permissions for your authenticated session.
+          </p>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-3 text-xs">
+            <div>
+              <span className="font-semibold text-slate-500 block mb-1">Name</span>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-slate-900 font-medium">
+                {session.user.name || "Alex Rivera"}
+              </div>
+            </div>
+
+            <div>
+              <span className="font-semibold text-slate-500 block mb-1">Email</span>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-slate-900 font-medium truncate">
+                {session.user.email}
+              </div>
+            </div>
+
+            <div>
+              <span className="font-semibold text-slate-500 block mb-1">Role Permission</span>
+              <div className="rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2.5 text-purple-700 font-bold uppercase">
+                {session.user.role}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Public Feedback Portal & Weekly Digest */}
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                Public Feedback Portal & Weekly Digest
+              </h2>
+              <p className="mt-1 text-xs text-slate-500 max-w-xl">
+                Configure your customer-facing feedback board, public URL slug, custom branding, and weekly founder digest email schedule.
+              </p>
+            </div>
+
+            <Link
+              href="/dashboard/settings/portal"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-700 transition shadow-sm shrink-0"
+            >
+              <span>Configure Portal & Digest</span>
+              <span>→</span>
+            </Link>
+          </div>
+        </section>
+
+        {/* Integrations & Webhooks */}
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                Integrations, Webhooks & Widget
+              </h2>
+              <p className="mt-1 text-xs text-slate-500 max-w-xl">
+                Generate workspace API keys, ingest incoming webhook payloads from external systems, and embed customer feedback widgets.
+              </p>
+            </div>
+
+            <Link
+              href="/dashboard/settings/integrations"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm shrink-0"
+            >
+              <span>Manage Integrations</span>
+              <span>→</span>
+            </Link>
+          </div>
+        </section>
+
+        {/* Team Members */}
+        {session.user.role === "ADMIN" && (
+          <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  Team Members & Permissions
+                </h2>
+                <p className="mt-1 text-xs text-slate-500 max-w-xl">
+                  Invite teammates to collaborate with Admin, Analyst, or Viewer roles.
+                </p>
+              </div>
+
+              <Link
+                href="/dashboard/members"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-black px-4 py-2 text-xs font-bold text-white transition shadow-sm shrink-0"
+              >
+                <span>Manage Team Members</span>
+                <span>→</span>
+              </Link>
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
   );
 }

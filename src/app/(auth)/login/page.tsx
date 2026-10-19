@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import LoopLogo from "@/components/LoopLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,7 +16,6 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     setLoading(true);
     setMessage("");
 
@@ -36,195 +36,138 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white lg:grid lg:grid-cols-[58%_42%]">
-      {/* LEFT AI SECTION */}
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-[#ddd6ff] via-[#eeeaff] to-[#c9c1ff] lg:flex">
-        <div className="absolute inset-0">
-          <div className="absolute left-[-120px] top-20 h-96 w-96 rounded-full bg-white/50 blur-3xl" />
-          <div className="absolute bottom-[-100px] right-[-80px] h-96 w-96 rounded-full bg-purple-400/20 blur-3xl" />
+    <main className="min-h-screen bg-[#070814] text-white lg:grid lg:grid-cols-12 relative overflow-hidden">
+      {/* BACKGROUND COSMIC LIGHT BLOOMS */}
+      <div 
+        className="pointer-events-none absolute -top-40 left-[20%] h-[600px] w-[600px] rounded-full blur-[140px] opacity-30"
+        style={{ background: "radial-gradient(circle, #8B2CFC 0%, #D946EF 50%, transparent 70%)" }}
+      />
+      <div 
+        className="pointer-events-none absolute -bottom-20 right-[-10%] h-[500px] w-[500px] rounded-full blur-[150px] opacity-25"
+        style={{ background: "radial-gradient(circle, #06B6D4 0%, #8B2CFC 60%, transparent 70%)" }}
+      />
+
+      {/* LEFT SECTION (HERO / VALUE PROP) */}
+      <section className="relative hidden lg:flex lg:col-span-7 flex-col justify-between p-12 xl:p-16 border-r border-white/5">
+        <div>
+          <LoopLogo variant="stitch-nav" badge="v1.0" href="/" priority />
         </div>
 
-        <div className="relative flex w-full flex-col justify-between p-16">
-          {/* LOGO */}
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6655e8] text-white">
-              ◉
-            </div>
-
-            <span className="text-2xl font-bold">LOOP</span>
+        <div className="max-w-xl my-auto py-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-950/40 px-3.5 py-1 text-xs font-semibold text-purple-200 backdrop-blur-md mb-6">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>AI Feedback Intelligence & Prioritization</span>
           </div>
 
-          {/* TEXT */}
-          <div className="max-w-xl">
-            <h1 className="text-5xl font-bold leading-tight text-[#111827]">
-              AI that listens.
-              <br />
+          <h1 className="text-4xl xl:text-5xl font-black text-white leading-tight tracking-tight">
+            AI that listens.
+            <br />
+            <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">
               Insights that drive
-              <br />
-              better products.
-            </h1>
+            </span>
+            <br />
+            better products.
+          </h1>
 
-            <p className="mt-6 max-w-md text-lg leading-8 text-gray-600">
-              Unified customer feedback. AI-powered analysis. Actionable
-              product insights.
-            </p>
-
-            {/* AI VISUAL */}
-            <div className="relative mt-10 h-80">
-              {/* brain */}
-              <div className="absolute left-1/2 top-8 flex h-52 w-52 -translate-x-1/2 items-center justify-center rounded-[40px] border border-white/70 bg-white/30 shadow-2xl backdrop-blur">
-                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-[#8d7cf4] to-[#5948d9] text-6xl shadow-xl">
-                  🧠
-                </div>
-              </div>
-
-              {/* review card */}
-              <div className="absolute left-0 top-24 rounded-xl border border-white/80 bg-white/70 p-4 shadow-lg backdrop-blur">
-                <p className="text-xs font-semibold">Review</p>
-                <div className="mt-2 text-yellow-500">★★★★★</div>
-              </div>
-
-              {/* survey */}
-              <div className="absolute bottom-2 left-8 rounded-xl border border-white/80 bg-white/70 p-4 shadow-lg backdrop-blur">
-                <p className="text-xs text-gray-500">Survey Response</p>
-                <p className="mt-1 text-sm font-semibold">Great product!</p>
-              </div>
-
-              {/* support */}
-              <div className="absolute right-0 top-28 rounded-xl border border-white/80 bg-white/70 p-4 shadow-lg backdrop-blur">
-                <p className="text-xs text-gray-500">Support Ticket</p>
-                <p className="mt-1 text-sm font-semibold">Issue resolved</p>
-              </div>
-
-              {/* magnifier */}
-              <div className="absolute bottom-0 right-16 flex h-20 w-20 items-center justify-center rounded-full border-2 border-white/80 bg-white/30 text-4xl">
-                🔍
-              </div>
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-500">
-            Turn feedback into decisions with LOOP.
+          <p className="mt-6 text-sm xl:text-base text-slate-300 leading-relaxed font-normal">
+            Synthesize incoming feedback across Intercom, Zendesk, Discord, and public portals. Uncover duplicate trends and prioritize your roadmap with transparent mathematical evidence.
           </p>
+
+          {/* Floating Neon Preview Card */}
+          <div className="mt-10 rounded-2xl border border-purple-500/20 bg-[#0B1026]/80 p-5 backdrop-blur-xl shadow-glow-sm">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
+              <span className="font-mono text-purple-300 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                Live Vector Clustering
+              </span>
+              <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                +84% Alignment
+              </span>
+            </div>
+            <div className="mt-3 flex items-center justify-between text-xs">
+              <span className="font-semibold text-white">Automated EU VAT & Stripe Tax</span>
+              <span className="font-mono text-purple-400 font-bold">185 pts</span>
+            </div>
+            <p className="mt-1 text-[11px] text-slate-400 italic">
+              &ldquo;43 manual reverse-charge invoices last quarter. Highest ARR churn risk unblocked.&rdquo;
+            </p>
+          </div>
+        </div>
+
+        <div className="text-xs text-slate-500">
+          IDEAS → INSIGHTS → IMPACT &bull; Built for modern product teams.
         </div>
       </section>
 
-      {/* RIGHT LOGIN */}
-      <section className="flex min-h-screen items-center justify-center bg-white px-8 py-12">
+      {/* RIGHT SECTION (LOGIN FORM) */}
+      <section className="lg:col-span-5 flex min-h-screen items-center justify-center p-6 sm:p-12 relative z-20">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="mb-10 flex items-center justify-center gap-2 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6655e8] text-white">
-              ◉
-            </div>
-            <span className="text-2xl font-bold">LOOP</span>
+          {/* Mobile brand header */}
+          <div className="mb-8 flex items-center justify-center lg:hidden">
+            <LoopLogo variant="stitch-nav" badge="AI 2.5" href="/" priority />
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-100">
-            <h2 className="text-2xl font-bold">Welcome back 👋</h2>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Login to your workspace
+          <div className="rounded-3xl border border-white/10 bg-[#0B1026]/90 p-8 shadow-2xl backdrop-blur-2xl">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Welcome back 👋</h2>
+            <p className="mt-1.5 text-xs text-slate-400">
+              Sign in to your LOOP intelligence workspace
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8">
-              {/* EMAIL */}
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Email address
-                </label>
+            {message && (
+              <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/40 p-3 text-xs font-semibold text-rose-300">
+                {message}
+              </div>
+            )}
 
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="jane@acme.com"
+                  placeholder="alex@acme.com"
                   required
-                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6655e8] focus:ring-2 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:bg-white/10 focus:ring-1 focus:ring-purple-500 transition"
                 />
               </div>
 
-              {/* PASSWORD */}
-              <div className="mt-5">
-                <div className="mb-2 flex justify-between">
-                  <label className="text-sm font-medium">Password</label>
-
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-[#6655e8]"
-                  >
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-slate-300">
+                    Password
+                  </label>
+                  <span className="text-[11px] text-purple-400 hover:text-purple-300 cursor-pointer">
                     Forgot password?
-                  </button>
+                  </span>
                 </div>
-
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••"
+                  placeholder="••••••••"
                   required
-                  className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#6655e8] focus:ring-2 focus:ring-purple-100"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-purple-500 focus:bg-white/10 focus:ring-1 focus:ring-purple-500 transition"
                 />
               </div>
 
-              {/* REMEMBER */}
-              <div className="mt-4 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="h-4 w-4 accent-[#6655e8]"
-                />
-
-                <label
-                  htmlFor="remember"
-                  className="text-xs text-gray-600"
-                >
-                  Remember me
-                </label>
-              </div>
-
-              {/* LOGIN */}
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-6 w-full rounded-lg bg-[#6655e8] py-3.5 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition hover:bg-[#5847d8] disabled:opacity-60"
+                className="w-full mt-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 py-3 text-xs font-bold text-white shadow-glow-sm hover:shadow-glow-md hover:opacity-95 transition disabled:opacity-50"
               >
-                {loading ? "Logging in..." : "Log in"}
-              </button>
-
-              {/* ERROR */}
-              {message && (
-                <p className="mt-4 text-center text-sm text-red-500">
-                  {message}
-                </p>
-              )}
-
-              {/* DIVIDER */}
-              <div className="my-6 flex items-center gap-3">
-                <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-xs text-gray-400">or continue with</span>
-                <div className="h-px flex-1 bg-gray-200" />
-              </div>
-
-              {/* GOOGLE LOOKING BUTTON */}
-              <button
-                type="button"
-                className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-200 py-3 text-sm font-medium hover:bg-gray-50"
-              >
-                <span className="font-bold text-red-500">G</span>
-                Continue with Google
+                {loading ? "Signing in..." : "Sign In to Workspace →"}
               </button>
             </form>
 
-            <p className="mt-7 text-center text-sm text-gray-500">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/register"
-                className="font-semibold text-[#6655e8] hover:underline"
-              >
-                Create one
+            <div className="mt-6 border-t border-white/10 pt-4 text-center text-xs text-slate-400">
+              Don&apos;t have a workspace yet?{" "}
+              <Link href="/register" className="font-semibold text-purple-400 hover:text-purple-300">
+                Start 14-day free trial
               </Link>
-            </p>
+            </div>
           </div>
         </div>
       </section>
