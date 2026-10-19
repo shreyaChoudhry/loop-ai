@@ -72,22 +72,37 @@ export async function POST(request: Request) {
     }
 
     const role = session.user.role;
-    if (role !== "ADMIN" && role !== "ANALYST") {
-      return NextResponse.json(
-        { error: "Forbidden: You do not have permission to create roadmap requests." },
-        { status: 403 }
-      );
+    const body = await request.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
     }
 
-    const body = await request.json();
     const { title, description, category, status, effort, impact } = body;
 
-    if (!title || title.trim().length < 3) {
+    if (!title || typeof title !== "string" || title.trim().length < 3) {
       return NextResponse.json(
         { error: "Title must be at least 3 characters." },
         { status: 400 }
       );
     }
+
+    // Role-aware status determination:
+    // Viewers submit ideas for review; Admins and Analysts can directly plan or set in-progress
+    let requestStatus: "UNDER_REVIEW" | "PLANNED" | "IN_PROGRESS" = "UNDER_REVIEW";
+    if (role === "ADMIN" || role === "ANALYST") {
+      if (status === "PLANNED" || status === "IN_PROGRESS" || status === "UNDER_REVIEW") {
+        requestStatus = status;
+      }
+    }
+
+    const numericEffort =
+      effort !== undefined && effort !== null
+        ? Math.max(1, Math.min(5, parseInt(String(effort), 10) || 3))
+        : 3;
+    const numericImpact =
+      impact !== undefined && impact !== null
+        ? Math.max(1, Math.min(5, parseInt(String(impact), 10) || 3))
+        : 3;
 
     const newRequest = await prisma.$transaction(async (tx) => {
       const created = await tx.request.create({
@@ -95,9 +110,9 @@ export async function POST(request: Request) {
           title: title.trim(),
           description: description?.trim() || "",
           category: category ? category.trim() : null,
-          status: status || "UNDER_REVIEW",
-          effort: effort ? parseInt(effort, 10) : 3,
-          impact: impact ? parseInt(impact, 10) : 3,
+          status: requestStatus,
+          effort: numericEffort,
+          impact: numericImpact,
           workspaceId: session.user.workspaceId,
           voteCount: 0,
         },
@@ -107,8 +122,8 @@ export async function POST(request: Request) {
         data: {
           requestId: created.id,
           newStatus: created.status,
-          comment: `Created by ${session.user.name || session.user.email}`,
-          changedBy: session.user.id,
+          comment: `Created by ${session.user.name || session.user.email} (${role})`,
+          changedBy: session.user.id || null,
         },
       });
 
@@ -118,6 +133,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, request: newRequest }, { status: 201 });
   } catch (error) {
     console.error("Roadmap create error:", error);
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error." },
+      { status: 500 }
+    );
   }
 }

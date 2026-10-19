@@ -56,14 +56,19 @@ export default function PrioritizationPage() {
     );
 
     try {
-      await fetch(`/api/roadmap/requests/${requestId}`, {
+      const res = await fetch(`/api/roadmap/requests/${requestId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ impact, effort }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to update impact and effort.");
+      }
       await loadData();
     } catch (e) {
       console.error(e);
+      await loadData();
     }
   }
 

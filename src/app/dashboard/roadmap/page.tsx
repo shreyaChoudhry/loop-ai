@@ -141,7 +141,9 @@ export default function DashboardRoadmapPage() {
           status: newStatus,
         }),
       });
-      if (!res.ok) throw new Error("Failed to create request");
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to create request");
 
       await loadData();
       setIsCreateOpen(false);
