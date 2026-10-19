@@ -16,6 +16,16 @@ const navItems = [
     roles: ["ADMIN", "ANALYST", "VIEWER"],
   },
   {
+    name: "Roadmap",
+    href: "/dashboard/roadmap",
+    roles: ["ADMIN", "ANALYST", "VIEWER"],
+  },
+  {
+    name: "Prioritize",
+    href: "/dashboard/prioritization",
+    roles: ["ADMIN", "ANALYST"],
+  },
+  {
     name: "Analytics",
     href: "/dashboard/analytics",
     roles: ["ADMIN", "ANALYST"],

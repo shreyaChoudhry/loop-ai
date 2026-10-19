@@ -33,29 +33,53 @@ enum Sentiment {
   NEGATIVE
 }
 
-model Workspace {
-  id        String     @id @default(cuid())
-  name      String
-  createdAt DateTime   @default(now())
+enum PublicStatus {
+  UNDER_REVIEW
+  PLANNED
+  IN_PROGRESS
+  SHIPPED
+  NOT_PLANNED
+}
 
-  users     User[]
-  feedback  Feedback[]
-  themes    Theme[]
-  reports   Report[]
+model Workspace {
+  id                String     @id @default(cuid())
+  name              String
+  slug              String?    @unique
+  code              String?
+  portalEnabled     Boolean    @default(true)
+  portalName        String?
+  portalDescription String?
+  portalLogoUrl     String?
+  portalAccentColor String?    @default("#6655e8")
+  showNotPlanned    Boolean    @default(false)
+  digestEnabled     Boolean    @default(false)
+  digestEmail       String?
+  digestLastSentAt  DateTime?
+  apiKey            String?    @unique
+  createdAt         DateTime   @default(now())
+
+  users             User[]
+  feedback          Feedback[]
+  themes            Theme[]
+  reports           Report[]
+  requests          Request[]
+  votes             Vote[]
 
   @@index([createdAt])
+  @@index([slug])
 }
 
 model User {
   id          String    @id @default(cuid())
   name        String
-  email       String    @unique
+  email       String
   password    String
   role        UserRole  @default(VIEWER)
   workspaceId String
 
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
+  @@unique([workspaceId, email])
   @@index([workspaceId])
 }
 
@@ -132,3 +156,108 @@ model Embedding {
 
   @@index([feedbackId])
 }
+
+model Request {
+  id                 String                 @id @default(cuid())
+  title              String
+  description        String
+  category           String?
+  status             PublicStatus           @default(UNDER_REVIEW)
+  voteCount          Int                    @default(0)
+
+  authorEmail        String?
+  notifyOnUpdate     Boolean                @default(true)
+
+  canonicalRequestId String?
+  canonicalRequest   Request?               @relation("RequestDuplicates", fields: [canonicalRequestId], references: [id], onDelete: SetNull)
+  duplicates         Request[]              @relation("RequestDuplicates")
+  duplicateReason    String?
+
+  effort             Int?                   @default(3)
+  impact             Int?                   @default(3)
+
+  shippedAt          DateTime?
+  releaseNote        String?
+
+  workspaceId        String
+  workspace          Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  votes              Vote[]
+  statusHistory      RequestStatusHistory[]
+  followUps          FollowUpFeedback[]
+  notifications      NotificationRecord[]
+
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, voteCount])
+  @@index([canonicalRequestId])
+  @@index([createdAt])
+}
+
+model Vote {
+  id             String    @id @default(cuid())
+  requestId      String
+  request        Request   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  voterToken     String
+  voterEmail     String?
+  notifyOnUpdate Boolean   @default(true)
+
+  createdAt      DateTime  @default(now())
+
+  @@unique([requestId, voterToken])
+  @@index([workspaceId])
+  @@index([requestId])
+  @@index([voterEmail])
+}
+
+model RequestStatusHistory {
+  id        String        @id @default(cuid())
+  requestId String
+  request   Request       @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  oldStatus PublicStatus?
+  newStatus PublicStatus
+  comment   String?
+  changedBy String?
+
+  createdAt DateTime      @default(now())
+
+  @@index([requestId])
+  @@index([createdAt])
+}
+
+model FollowUpFeedback {
+  id          String   @id @default(cuid())
+  requestId   String
+  request     Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  satisfied   Boolean
+  comment     String?
+  authorEmail String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([requestId])
+}
+
+model NotificationRecord {
+  id             String       @id @default(cuid())
+  requestId      String
+  request        Request      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  recipient      String
+  status         PublicStatus
+  deliveryStatus String       @default("SENT")
+  sentAt         DateTime     @default(now())
+
+  @@unique([requestId, recipient, status])
+  @@index([requestId])
+  @@index([recipient])
+}

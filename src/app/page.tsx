@@ -322,6 +322,89 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* CORE WORKFLOW PILLARS */}
+      <section className="border-t border-gray-100 bg-white py-20">
+        <div className="mx-auto max-w-7xl px-8">
+          <div className="text-center max-w-2xl mx-auto">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#6655e8]">
+              The Feedback-to-Roadmap Engine
+            </h2>
+            <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
+              Turn scattered feedback into decisions you can defend.
+            </p>
+            <p className="mt-4 text-base text-gray-600">
+              Stop guessing what to build next. LOOP connects raw customer comments to an evidence-backed roadmap and closes the loop automatically.
+            </p>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-lg">
+                📥
+              </div>
+              <h3 className="mt-4 text-base font-bold text-gray-900">1. Collect in One Place</h3>
+              <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                Import customer feedback via CSV or stream it live through incoming webhooks and website widgets.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-lg">
+                🔍
+              </div>
+              <h3 className="mt-4 text-base font-bold text-gray-900">2. Detect Duplicates</h3>
+              <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                AI and deterministic embeddings cluster similar ideas so you discover what customers really want without duplicate noise.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-lg">
+                📊
+              </div>
+              <h3 className="mt-4 text-base font-bold text-gray-900">3. Evidence Prioritization</h3>
+              <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                Rank requests with transparent formulas factoring in customer upvotes, recency, related feedback, and effort.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-lg">
+                🚀
+              </div>
+              <h3 className="mt-4 text-base font-bold text-gray-900">4. Close The Loop</h3>
+              <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                Publish a public roadmap, notify subscribed customers when ideas ship, and measure follow-up satisfaction.
+              </p>
+            </div>
+          </div>
+
+          {/* CTA BANNER */}
+          <div className="mt-20 rounded-3xl bg-gradient-to-r from-[#101631] to-[#201c4b] p-12 text-center text-white shadow-xl">
+            <h3 className="text-3xl font-bold md:text-4xl">
+              Ready to build what customers actually want?
+            </h3>
+            <p className="mt-4 max-w-xl mx-auto text-sm text-gray-300">
+              Start gathering feedback, prioritizing with evidence, and publishing your public roadmap in minutes.
+            </p>
+            <div className="mt-8 flex justify-center gap-4">
+              <Link
+                href="/register"
+                className="rounded-lg bg-[#6655e8] px-8 py-3.5 text-sm font-semibold text-white shadow hover:bg-[#5847d8]"
+              >
+                Create Your Workspace
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-lg border border-white/20 bg-white/10 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/20"
+              >
+                Sign In
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

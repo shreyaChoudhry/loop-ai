@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import prisma from "@/lib/prisma";
 
 import StatCard from "./StatCard";
@@ -43,12 +44,25 @@ export default async function DashboardPage() {
   }
 
   // --------------------------------
-  // Base workspace filter
+  // Base workspace filter & info
   // --------------------------------
 
   const workspaceFilter = {
     workspaceId,
   };
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { name: true, slug: true, portalEnabled: true },
+  });
+
+  const totalRequests = await prisma.request.count({
+    where: workspaceFilter,
+  });
+
+  const totalVotes = await prisma.vote.count({
+    where: workspaceFilter,
+  });
 
   // --------------------------------
   // Total feedback
@@ -312,6 +326,103 @@ export default async function DashboardPage() {
         <p className="mt-2 text-gray-500">
          Here&apos;s what&apos;s happening with your feedback today.
         </p>
+      </div>
+
+      {/* Feedback-to-Roadmap Founder Action Center */}
+      <div className="mb-8 rounded-2xl border border-violet-100 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700">
+              ◉ CLOSE THE LOOP WORKFLOW
+            </div>
+            <h2 className="mt-2 text-lg font-bold text-gray-900">
+              Feedback-to-Roadmap Engine
+            </h2>
+            <p className="text-xs text-gray-500">
+              Turn scattered customer feedback into evidence-backed product decisions and public roadmap updates.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {workspace?.slug ? (
+              <Link
+                href={`/portal/${workspace.slug}`}
+                target="_blank"
+                className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              >
+                <span>🔗 Public Portal</span>
+                <span className="text-[10px] text-gray-400">↗</span>
+              </Link>
+            ) : (
+              <Link
+                href="/dashboard/settings/portal"
+                className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100"
+              >
+                Set Portal URL Slug
+              </Link>
+            )}
+
+            <Link
+              href="/dashboard/roadmap"
+              className="rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-violet-700"
+            >
+              Manage Roadmap →
+            </Link>
+          </div>
+        </div>
+
+        {/* 4 Steps Checklist */}
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
+          <Link
+            href="/dashboard/inbox"
+            className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 hover:border-violet-200 hover:bg-white transition"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Step 1</span>
+              <span className="text-xs font-bold text-violet-600">{totalFeedback} items</span>
+            </div>
+            <h3 className="mt-1 text-xs font-bold text-gray-900">Collect Feedback</h3>
+            <p className="text-[11px] text-gray-500">Import CSV or ingest webhooks</p>
+          </Link>
+
+          <Link
+            href="/dashboard/settings/portal"
+            className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 hover:border-violet-200 hover:bg-white transition"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Step 2</span>
+              <span className="text-xs font-bold text-emerald-600">
+                {workspace?.portalEnabled ? "Active" : "Disabled"}
+              </span>
+            </div>
+            <h3 className="mt-1 text-xs font-bold text-gray-900">Share Public Portal</h3>
+            <p className="text-[11px] text-gray-500">Collect votes and ideas from users</p>
+          </Link>
+
+          <Link
+            href="/dashboard/prioritization"
+            className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 hover:border-violet-200 hover:bg-white transition"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Step 3</span>
+              <span className="text-xs font-bold text-violet-600">{totalRequests} ideas</span>
+            </div>
+            <h3 className="mt-1 text-xs font-bold text-gray-900">Prioritize Evidence</h3>
+            <p className="text-[11px] text-gray-500">Rank by votes, feedback & effort</p>
+          </Link>
+
+          <Link
+            href="/dashboard/roadmap"
+            className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 hover:border-violet-200 hover:bg-white transition"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase">Step 4</span>
+              <span className="text-xs font-bold text-violet-600">{totalVotes} votes</span>
+            </div>
+            <h3 className="mt-1 text-xs font-bold text-gray-900">Close The Loop</h3>
+            <p className="text-[11px] text-gray-500">Publish roadmap & notify voters</p>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

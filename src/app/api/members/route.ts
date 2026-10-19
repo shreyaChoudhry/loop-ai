@@ -56,9 +56,8 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Email is globally unique in our database.
-    // So check the email directly.
-    const existingUser = await prisma.user.findUnique({
+    // Check if email exists
+    const existingUser = await prisma.user.findFirst({
       where: {
         email: normalizedEmail,
       },

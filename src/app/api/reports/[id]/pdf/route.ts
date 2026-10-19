@@ -1689,24 +1689,18 @@ export async function GET(
     const pdfBuffer =
       await pdfPromise;
 
-    return new NextResponse(
-      new Uint8Array(
-        pdfBuffer
-      ),
-      {
-        status: 200,
+    const pdfData = new Uint8Array(pdfBuffer);
 
-        headers: {
-          "Content-Type":
-            "application/pdf",
-
-          "Content-Disposition": `attachment; filename="voice-of-customer-${report.id}.pdf"`,
-
-          "Content-Length":
-            pdfBuffer.length.toString(),
-        },
-      }
-    );
+    return new Response(pdfData, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="voice-of-customer-${report.id}.pdf"`,
+        "Content-Length": String(pdfData.length),
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        Pragma: "no-cache",
+      },
+    });
   } catch (error) {
     console.error(
       "PDF export error:",

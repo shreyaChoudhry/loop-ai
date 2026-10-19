@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const normalizedWorkspaceName = workspaceName.trim();
 
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findFirst({
       where: {
         email: normalizedEmail,
       },

@@ -185,22 +185,44 @@ export default async function SettingsPage() {
           </section>
 
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Integrations
-            </h2>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Public Feedback Portal & Weekly Digest
+                </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
-              External data sources connected to LOOP.
-            </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Configure your customer-facing feedback board, public URL slug, custom branding, and weekly founder digest.
+                </p>
+              </div>
 
-            <div className="mt-5 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-              <p className="text-sm font-medium text-slate-700">
-                No external integrations connected
-              </p>
+              <Link
+                href="/dashboard/settings/portal"
+                className="inline-flex items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700"
+              >
+                Configure Portal →
+              </Link>
+            </div>
+          </section>
 
-              <p className="mt-1 text-xs text-slate-500">
-                CSV import and simulated channels are currently available.
-              </p>
+          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Integrations & Webhooks
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Workspace API keys, incoming feedback webhooks, and website widget snippets.
+                </p>
+              </div>
+
+              <Link
+                href="/dashboard/settings/integrations"
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
+              >
+                Manage API Keys & Webhooks →
+              </Link>
             </div>
           </section>
 
