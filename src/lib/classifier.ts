@@ -1,4 +1,4 @@
-import anthropic from "@/lib/claude";
+import getAnthropicClient from "@/lib/claude";
 import {
   feedbackClassificationSchema,
   type FeedbackClassification,
@@ -171,7 +171,7 @@ async function claudeClassifyFeedback(
   feedbackText: string
 ): Promise<FeedbackClassification> {
   const message =
-    await anthropic.messages.create({
+  await getAnthropicClient().messages.create({
       model,
       max_tokens: 500,
 

@@ -1,4 +1,4 @@
-import anthropic from "@/lib/claude";
+import getAnthropicClient from "@/lib/claude";
 
 import {
   retrieveRelevantFeedback,
@@ -109,7 +109,7 @@ Content: ${item.content}`
     .join("\n\n");
 
   const message =
-    await anthropic.messages.create({
+await getAnthropicClient().messages.create({
       model,
       max_tokens: 700,
 
